@@ -29,6 +29,10 @@ sqa-social-media/
 │   └── ...      # (ver detalhes abaixo)
 ├── client/      # Frontend Next.js
 │   └── ...      # (ver detalhes abaixo)
+├── tests/       # Playwright (E2E e API)
+│   └── tests/
+│       ├── e2e/  # fluxos de UI (intro, signup, etc.)
+│       └── api/  # testes de endpoints (posts, auth)
 ```
 
 ### Backend (API)
@@ -41,14 +45,14 @@ sqa-social-media/
 
 **Principais Endpoints:**
 
-| Método | Endpoint               | Descrição                       |
-|--------|------------------------|---------------------------------|
-| POST   | /auth/signup           | Criar nova conta                |
-| POST   | /auth/signin           | Login                           |
-| POST   | /auth/reset-password   | Resetar senha                   |
-| GET    | /posts                 | Listar posts                    |
-| GET    | /posts/liked           | Listar posts curtidos           |
-| POST   | /posts/{postId}/like   | Curtir/descurtir post           |
+| Método | Endpoint             | Descrição             |
+| ------ | -------------------- | --------------------- |
+| POST   | /auth/signup         | Criar nova conta      |
+| POST   | /auth/signin         | Login                 |
+| POST   | /auth/reset-password | Resetar senha         |
+| GET    | /posts               | Listar posts          |
+| GET    | /posts/liked         | Listar posts curtidos |
+| POST   | /posts/{postId}/like | Curtir/descurtir post |
 
 Ver detalhes de configuração no arquivo [`api/README.md`](api/README.md).
 
@@ -62,11 +66,11 @@ Ver detalhes de configuração no arquivo [`api/README.md`](api/README.md).
 
 **Principais Rotas:**
 
-- `/`             — Feed de posts
-- `/signup`       — Cadastro
-- `/signin`       — Login
+- `/` — Feed de posts
+- `/signup` — Cadastro
+- `/signin` — Login
 - `/reset-password` — Recuperação de senha
-- `/auth/liked`   — Posts curtidos (protegido)
+- `/auth/liked` — Posts curtidos (protegido)
 
 > As requisições ao backend usam a URL no `.env` via `NEXT_PUBLIC_BASE_URL`.
 
@@ -74,10 +78,11 @@ Mais detalhes no [`client/README.md`](client/README.md).
 
 ## 🚀 Como executar localmente
 
-**Pré-requisitos:**  
-- Node.js 18+, npm 8+  
+**Pré-requisitos:**
+
+- Node.js 18+, npm 8+
 - Java 17+
-- Maven  
+- Maven
 - MySQL ou outro banco relacional (opcional para desenvolvimento, H2 já funciona para testes locais)
 
 ### 1. Clone o projeto
@@ -98,30 +103,55 @@ cd api
 ./mvnw clean install
 ./mvnw spring-boot:run
 ```
+
 Acesse: http://localhost:8080
 
 ### 3. Configure o Frontend
 
 1. Entre na pasta `client/`
 2. Instale as dependências:
+
 ```bash
 cd ../client
 npm install
 ```
+
 3. Crie `.env` com a URL da API:
+
 ```env
 NEXT_PUBLIC_BASE_URL=http://localhost:8080
 ```
+
 4. Rode o app:
+
 ```bash
 npm run dev
 ```
+
 Acesse: http://localhost:3000
 
 ## 🧪 Testes
 
-- **API**: `./mvnw test` (utiliza banco H2 em memória)
-- **Frontend**: `npm test` (scripts para coverage e watch disponíveis)
+- **API (Java)**: `./mvnw test` (na pasta `api/` - utiliza banco H2 em memória)
+- **Frontend (Jest)**: `npm test` (na pasta `client/` - scripts para coverage e watch disponíveis)
+- **E2E e API (Playwright)**: `npx playwright test` (na pasta `tests/`)
+  ```bash
+  cd tests
+  npm install
+  npx playwright install
+  # todos os testes
+  npx playwright test
+  # apenas E2E
+  npx playwright test tests/e2e
+  # apenas API
+  npx playwright test tests/api
+  # modo UI
+  npx playwright test --ui
+  # modo de visualização da interação
+  npx playwright test --headed
+  ```
+
+> Requisitos padrão: Frontend e API sendo executados em `http://localhost:3000` e `http://localhost:8080`, respectivamente.
 
 ---
 
@@ -131,6 +161,7 @@ Consulte os READMEs das pastas `api/` e `client/` para documentação detalhada 
 
 - [README da API](api/README.md)
 - [README do Frontend](client/README.md)
+- [README dos Testes (Playwright)](tests/README.md)
 - [DummyJSON API Docs](https://dummyjson.com/docs)
 
 ---
