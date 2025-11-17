@@ -5,5 +5,5 @@ test('deve fazer login com sucesso', async ({ page }) => {
     await page.fill('input[type="email"]', 'marco@email.com');
     await page.fill('input[type="password"]', 'TestPass$123');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL('/'); // Verifica se redirecionou para a página inicial
+    await expect(page).toHaveURL('/');
 });

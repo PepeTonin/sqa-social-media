@@ -6,5 +6,5 @@ test('deve fazer o cadastro com sucesso', async ({ page }) => {
     await page.fill('input[type="password"]', 'StrongPass$123');
     await page.getByLabel('Confirmar Senha').fill('StrongPass$123');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL('/'); // Verifica se redirecionou para a página inicial
+    await expect(page).toHaveURL('/');
 })

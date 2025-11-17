@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 const API_URL = "http://localhost:8080";
 
-// Função auxiliar cria ou faz login no usuário
+// cria ou faz login no usuário
 async function loginAndGetUser() {
     const loginResponse = await fetch(`${API_URL}/auth/signin`, {
         method: "POST",
