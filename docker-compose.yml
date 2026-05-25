@@ -1,0 +1,17 @@
+
+services:
+  db:
+    image: mysql:latest
+    container_name: fag_quality_db
+    environment:
+      MYSQL_ROOT_PASSWORD: qualidade123
+      MYSQL_DATABASE: fag_quality
+      MYSQL_USER: marcelo
+      MYSQL_PASSWORD: qualidade123
+    ports:
+      - 3306:3306
+    volumes:
+      - fag_quality:/var/lib/mysql
+
+volumes:
+  fag_quality:
