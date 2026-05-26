@@ -45,7 +45,7 @@ describe("Header", () => {
       ).toBeInTheDocument();
 
       expect(
-        screen.getByRole("button", { name: "Criar Conta" })
+        screen.getByRole("button", { name: "Criar conta" })
       ).toBeInTheDocument();
 
       expect(
@@ -81,7 +81,7 @@ describe("Header", () => {
       ).not.toBeInTheDocument();
 
       expect(
-        screen.queryByRole("button", { name: "Criar Conta" })
+        screen.queryByRole("button", { name: "Criar conta" })
       ).not.toBeInTheDocument();
     });
   });

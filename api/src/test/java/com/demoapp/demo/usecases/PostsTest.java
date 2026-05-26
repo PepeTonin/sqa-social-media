@@ -77,9 +77,11 @@ public class PostsTest {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> posts = (List<Map<String, Object>>) resultado.get("posts");
             assertThat(posts).hasSize(2);
-            assertThat(posts.get(0).get("id")).isEqualTo(1L);
-            assertThat(posts.get(0)).containsKey("liked");
-            assertThat(posts.get(0).get("liked")).isEqualTo(false); // userId null → nenhuma curtida
+
+            Map<String, Object> firstPost = posts.get(0);
+            assertThat(firstPost.get("id")).isEqualTo(1L);
+            assertThat(firstPost).containsKey("liked");
+            assertThat(firstPost.get("liked")).isEqualTo(false);
 
             verify(restTemplate, times(1))
                     .getForObject(
