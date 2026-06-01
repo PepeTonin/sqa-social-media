@@ -37,8 +37,8 @@ describe("SignIn page", () => {
   });
 
   test("faz login com credenciais validas e redireciona para a home", async () => {
-    // Teste de integracao de fluxo: preenche formulario, chama o servico,
-    // atualiza o contexto de auth via login e navega para a rota principal.
+    // Teste de integracao de fluxo: preenche o form, clica em entrar e verifica se o signIn foi chamado
+    // ve se atualiza o contexto de autenticacao e se redireciona para a home page.
     const loginMock = jest.fn();
     mockedUseAuth.mockReturnValue({ login: loginMock });
     mockedSignIn.mockResolvedValue({

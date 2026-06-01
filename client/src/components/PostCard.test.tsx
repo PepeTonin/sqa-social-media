@@ -14,8 +14,8 @@ describe("PostCard", () => {
   });
 
   test("renderiza titulo, corpo e botao curtir", () => {
-    // Teste unitario de componente: renderiza um card isolado com props fixas.
-    // Ele valida o requisito do feed exibir titulo, corpo e botao de curtir.
+    // Teste unitario de componente: renderiza um card isolado com props fixas
+    // Ele valida o requisito do feed exibir titulo, corpo e botao de curtir
     render(
       <PostCard post={post} isAuthenticated={false} onLike={jest.fn()} />
     );
@@ -27,7 +27,7 @@ describe("PostCard", () => {
 
   test("usuario deslogado recebe alerta ao tentar curtir", () => {
     // Teste unitario de componente baseado no requisito:
-    // usuario deslogado deve ver um alert nativo ao clicar em Curtir.
+    // usuario deslogado deve ver um alert nativo ao clicar em Curtir
     const alertMock = jest.spyOn(window, "alert").mockImplementation(() => {});
     const onLike = jest.fn();
 

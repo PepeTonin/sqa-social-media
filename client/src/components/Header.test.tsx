@@ -23,8 +23,9 @@ describe("Header", () => {
   });
 
   test("mostra botoes de entrar e criar conta para usuario deslogado", () => {
-    // Teste unitario de componente: o Header e renderizado isoladamente
+    // Teste unitario de componente: o Header é renderizado isoladamente
     // com o contexto de autenticacao mockado como deslogado.
+    // quando deslogado ele deve mostrar os botoes de entrar e criar conta
     mockedUseAuth.mockReturnValue({
       isAuthenticated: false,
       logout: jest.fn(),
@@ -40,8 +41,9 @@ describe("Header", () => {
   });
 
   test("mostra posts curtidos e sair para usuario logado", () => {
-    // Teste unitario de componente: agora simulamos usuario autenticado.
+    // Teste unitario de componente: agora com usuario autenticado.
     // Isso valida a regra visual do cabecalho para usuarios logados.
+    // garante que os botoes de "Posts Curtidos" e "Sair" aparecam quando o usuario estiver logado
     mockedUseAuth.mockReturnValue({
       isAuthenticated: true,
       logout: jest.fn(),
@@ -57,6 +59,7 @@ describe("Header", () => {
 
   test("clicar no titulo redireciona para a pagina principal", () => {
     // Teste pequeno de comportamento: confirma o requisito de navegacao do titulo.
+    // Ele garante que o clique no titulo do site redirecione para a home page.
     mockedUseAuth.mockReturnValue({
       isAuthenticated: false,
       logout: jest.fn(),

@@ -33,7 +33,7 @@ class AuthControllerTest {
   @Test
   void signupComDadosValidosDeveCriarUsuario() throws Exception {
     // Teste de sucesso: valida que a API permite cadastrar um usuario com e-mail valido
-    // e senha forte, como o requisito de cadastro pede.
+    // e senha forte como o cadastro pede.
     mockMvc.perform(post("/auth/signup")
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
@@ -50,7 +50,7 @@ class AuthControllerTest {
   @Test
   void signinComCredenciaisInvalidasDeveRetornar401() throws Exception {
     // Teste de sucesso: valida que a API recusa login com credenciais incorretas
-    // e retorna a mensagem exigida no enunciado.
+    // e retorna a mensagem de erro.
     mockMvc.perform(post("/auth/signin")
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
@@ -67,7 +67,7 @@ class AuthControllerTest {
   @Test
   void signupComEmailDuplicadoDeveRetornarMensagemEmailJaCadastrado() throws Exception {
     // Teste de bug: o requisito diz que e-mail duplicado deve exibir
-    // "E-mail ja cadastrado". Hoje a API retorna outra mensagem, entao este teste
+    // "E-mail ja cadastrado". mas a API retorna outra mensagem, entao esse teste
     // deve falhar para provar a existencia do bug.
     String body = """
         {

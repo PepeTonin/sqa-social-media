@@ -30,7 +30,7 @@ describe("Home page", () => {
 
   test("carrega e exibe posts vindos do servico", async () => {
     // Teste de integracao de tela: renderiza a pagina Home,
-    // usa o servico de posts mockado e valida a interacao entre pagina e PostCard.
+    // renderiza a Home, mocka o servico de posts e verifica se o post carregado aparece no feed.
     mockedUseAuth.mockReturnValue({
       user: null,
       isAuthenticated: false,

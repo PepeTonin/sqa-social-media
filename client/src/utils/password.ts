@@ -1,5 +1,5 @@
 export function isPasswordValid(password: string): boolean {
-  if (!password || password.length <= 8) {
+  if (!password || password.length <= 8) { // aqui ta o erro, ele não aceita senha de 8 caracteres
     return false;
   }
 
