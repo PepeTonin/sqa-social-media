@@ -25,6 +25,9 @@ API:
 
 ```bash
 cd api
+set -a
+source .env.e2e
+set +a
 ./mvnw spring-boot:run
 ```
 
@@ -41,6 +44,9 @@ O frontend usa `NEXT_PUBLIC_BASE_URL` para definir a URL da API. Exemplo de `.en
 ```env
 NEXT_PUBLIC_BASE_URL=http://localhost:8080
 ```
+
+Para a preparação da Atividade 5, consulte
+[`ACTIVITY5_SETUP.md`](ACTIVITY5_SETUP.md).
 
 ## Documentações
 

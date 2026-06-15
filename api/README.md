@@ -151,8 +151,15 @@ cd api
 Execute:
 
 ```bash
+set -a
+source .env.e2e
+set +a
 ./mvnw spring-boot:run
 ```
+
+O arquivo `.env.e2e` é local e ignorado pelo Git. Use
+`.env.e2e.example` como referência, criando um banco e um usuário exclusivos
+para os testes E2E.
 
 No Windows:
 

@@ -32,7 +32,7 @@ Instale as dependências:
 npm install
 ```
 
-Crie um arquivo `.env` em `client/`:
+Crie um arquivo `.env.local` em `client/` usando `.env.example` como base:
 
 ```env
 NEXT_PUBLIC_BASE_URL=http://localhost:8080

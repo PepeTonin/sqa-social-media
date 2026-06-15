@@ -1,0 +1,13 @@
+node_modules/
+playwright-report/
+test-results/
+.env
+
+# Evidências geradas
+*.webm
+*.png
+*.zip
+trace/
+traces/
+screenshots/
+videos/
