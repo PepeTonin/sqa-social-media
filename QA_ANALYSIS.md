@@ -1,1036 +1,374 @@
-# Análise de QA — SQA Social Media
+# Relatório de Análise e Testes de Qualidade — SQA Social Media
 
-## 1. Escopo analisado
+**Curso:** Engenharia de Software — FAG  
+**Disciplina:** Qualidade de Software  
+**Atividade:** Prática de Testes 1  
+**Projeto analisado:** SQA Social Media  
 
-Esta análise cobre o estado atual do projeto fullstack SQA Social Media e compara
-a implementação com os requisitos funcionais da Atividade 4.
+---
 
-Foram inspecionados:
+## Resumo
 
-- backend Spring Boot em `api/`;
-- frontend Next.js/React/TypeScript em `client/`;
-- persistência JPA e configurações de banco;
-- contratos HTTP entre cliente e API;
-- validações de cadastro, login e redefinição de senha;
-- estado de autenticação e `localStorage`;
-- feed, curtidas e página de posts curtidos;
-- tratamento de erros;
-- configuração e presença de testes;
-- riscos de segurança, acessibilidade, arquitetura e testabilidade.
+Este relatório apresenta a análise de qualidade do sistema **SQA Social Media**, uma aplicação fullstack composta por um frontend em Next.js e uma API em Spring Boot. O trabalho foi desenvolvido a partir dos requisitos funcionais definidos para a Atividade 4, com foco na identificação de defeitos e na implementação de testes automatizados de unidade e integração.
 
-Não foram implementados testes e nenhum bug foi corrigido nesta etapa.
+A análise foi realizada por meio de inspeção do código-fonte, comparação entre implementação e requisitos e execução de testes automatizados. Foram implementados três testes no backend e seis conjuntos de testes no frontend, contemplando funções puras, componentes React e fluxos integrados. Conforme solicitado na atividade, foram mantidos testes que falham intencionalmente para demonstrar defeitos existentes no sistema.
 
-### Arquivos analisados
+Os principais problemas identificados estão relacionados à divergência de mensagens de erro, persistência incorreta da autenticação, validações inconsistentes entre frontend e backend e ausência de mecanismos adequados de segurança. Os resultados mostram que os testes automatizados permitem documentar o comportamento esperado, comprovar defeitos e reduzir o risco de regressões futuras.
 
-Backend:
+**Palavras-chave:** qualidade de software; testes unitários; testes de integração; JUnit; Jest; Testing Library; análise de defeitos.
 
-- `api/pom.xml`
-- `api/src/main/java/com/demoapp/demo/DemoApplication.java`
-- `api/src/main/java/com/demoapp/demo/config/AppConfig.java`
-- `api/src/main/java/com/demoapp/demo/controller/AuthController.java`
-- `api/src/main/java/com/demoapp/demo/controller/PostController.java`
-- `api/src/main/java/com/demoapp/demo/dto/EmailDTO.java`
-- `api/src/main/java/com/demoapp/demo/dto/ErrorResponse.java`
-- `api/src/main/java/com/demoapp/demo/dto/UserDTO.java`
-- `api/src/main/java/com/demoapp/demo/model/User.java`
-- `api/src/main/java/com/demoapp/demo/model/UserPostReaction.java`
-- `api/src/main/java/com/demoapp/demo/repository/UserRepository.java`
-- `api/src/main/java/com/demoapp/demo/repository/UserPostReactionRepository.java`
-- `api/src/main/java/com/demoapp/demo/service/UserService.java`
-- `api/src/main/java/com/demoapp/demo/service/PostService.java`
-- `api/src/main/resources/application.properties`
-- `api/src/test/resources/application.properties`
+---
 
-Frontend:
+## 1. Introdução
 
-- `client/package.json`
-- `client/package-lock.json`
-- `client/jest.config.ts`
-- `client/tsconfig.json`
-- `client/eslint.config.mjs`
-- `client/next.config.ts`
-- `client/src/app/layout.tsx`
-- `client/src/app/page.tsx`
-- `client/src/app/signup/page.tsx`
-- `client/src/app/signin/page.tsx`
-- `client/src/app/reset-password/page.tsx`
-- `client/src/app/auth/liked/page.tsx`
-- `client/src/components/Button.tsx`
-- `client/src/components/Header.tsx`
-- `client/src/components/Input.tsx`
-- `client/src/components/PostCard.tsx`
-- `client/src/components/TextButton.tsx`
-- `client/src/contexts/AuthContext.tsx`
-- `client/src/lib/localStorage.ts`
-- `client/src/service/api.ts`
-- `client/src/service/auth/auth.ts`
-- `client/src/service/posts/posts.ts`
-- `client/src/service/types/index.ts`
-- `client/src/utils/email.ts`
-- `client/src/utils/password.ts`
+Testes de software são utilizados para verificar se um sistema atende aos requisitos definidos e para identificar comportamentos incorretos antes que eles afetem os usuários. Além de detectar defeitos, uma suíte automatizada funciona como mecanismo de regressão, pois permite verificar se funcionalidades já validadas continuam funcionando após alterações no código.
 
-Também foram lidos os READMEs e os dois PDFs existentes em `instructions/`.
+O projeto **SQA Social Media** foi disponibilizado com defeitos intencionais. Dessa forma, a atividade não se limita à criação de testes que passam. Também é necessário desenvolver testes que falhem ao comparar o comportamento atual da aplicação com o comportamento especificado nos requisitos.
 
-## 2. Estrutura do projeto
+A aplicação analisada possui duas partes principais:
 
-### Backend
+- **Backend:** API REST desenvolvida com Spring Boot e persistência por Spring Data JPA;
+- **Frontend:** aplicação web desenvolvida com Next.js, React e TypeScript.
 
-A API segue uma separação simples entre controllers, services, repositories,
-entidades e DTOs.
+---
 
-- `AuthController` expõe cadastro, login e redefinição de senha.
-- `PostController` expõe feed, posts curtidos e alternância de curtida.
-- `UserService` concentra validações básicas e persistência de usuários.
-- `PostService` consulta a API DummyJSON e combina os posts com curtidas locais.
-- `UserRepository` e `UserPostReactionRepository` usam Spring Data JPA.
-- `User` e `UserPostReaction` são entidades sem relacionamentos JPA entre si.
-- MySQL é o banco padrão e H2 está disponível somente no escopo de testes.
+## 2. Objetivos
 
-Não existe Spring Security, token, sessão de servidor ou outro mecanismo real de
-autenticação/autorização. A identidade do usuário é recebida como um `userId`
-fornecido pelo cliente.
+### 2.1 Objetivo geral
 
-### Frontend
+Avaliar a conformidade do sistema SQA Social Media com os requisitos funcionais fornecidos e implementar testes automatizados capazes de validar comportamentos corretos e evidenciar defeitos existentes.
 
-O cliente usa App Router, páginas client-side, componentes reutilizáveis,
-Axios, Context API e `localStorage`.
+### 2.2 Objetivos específicos
 
-- `AuthContext` mantém o usuário autenticado em memória.
-- `localStorage.ts` deveria persistir a sessão entre recarregamentos.
-- páginas de cadastro, login e redefinição fazem validação local;
-- `PostCard` mantém estado local otimista da curtida;
-- a home também mantém estado otimista da mesma curtida;
-- `/auth/liked` aplica proteção somente no navegador.
+- analisar a estrutura do backend e do frontend;
+- comparar a implementação com os requisitos da atividade;
+- identificar e classificar defeitos funcionais;
+- implementar testes unitários e de integração no backend;
+- implementar testes de funções, componentes e fluxos no frontend;
+- registrar evidências dos testes aprovados e dos testes que falharam;
+- justificar tecnicamente as estratégias de teste adotadas.
 
-O Jest e Testing Library constam nas dependências, mas não existe nenhum arquivo
-de teste no estado atual do repositório.
+---
 
-## 3. Ambiente e comandos executados
+## 3. Metodologia
 
-Ambiente observado:
+A análise foi conduzida em quatro etapas.
 
-- Java usado pela execução direta da API: 23.0.1;
-- projeto configurado para Java 17;
-- Node.js: 22.14.0;
-- npm: 10.9.2;
-- banco temporário usado para verificação manual da API: H2 em memória.
+### 3.1 Leitura dos requisitos
 
-### Backend
+Inicialmente, foram identificados os comportamentos esperados para:
 
-#### `cd api && ./mvnw test`
+- cadastro de usuário;
+- autenticação;
+- redefinição de senha;
+- navegação e cabeçalho;
+- feed de publicações;
+- curtidas;
+- página de publicações curtidas.
 
-- Resultado: falhou antes de iniciar.
-- Erro: `permission denied: ./mvnw`.
-- Possível causa: o wrapper Maven não está marcado como executável.
-- Impacto sobre os testes: o comando documentado não funciona diretamente em
-  ambientes Unix até a permissão ser corrigida ou o wrapper ser chamado com
-  `sh`.
-- Classificação: erro de configuração, não bug funcional.
+Cada comportamento observado no código foi comparado com esses requisitos. Quando houve divergência, o comportamento foi registrado como defeito.
 
-#### `cd api && sh ./mvnw test`
+### 3.2 Inspeção estática do código
 
-- Resultado: `BUILD SUCCESS`.
-- Maven informou `No sources to compile` na fase `testCompile`.
-- Nenhum teste Java foi encontrado ou executado.
-- Impacto sobre os testes: sucesso do build não significa que comportamentos
-  estejam cobertos; atualmente a cobertura automatizada do backend é zero.
+Foi realizada a leitura dos principais arquivos da aplicação, incluindo controllers, services, repositories, entidades, páginas, componentes, contextos, serviços HTTP e funções utilitárias.
 
-#### Execução temporária da API com H2
+A inspeção estática permitiu identificar problemas como:
 
-Foi gerado o classpath Maven e a aplicação foi iniciada com H2 em memória para
-validar os endpoints sem depender do MySQL local.
+- condições incorretas em validações;
+- mensagens diferentes das especificadas;
+- inconsistências entre frontend e backend;
+- uso de chaves diferentes no `localStorage`;
+- ausência de validações de usuário e publicação;
+- exposição indevida de dados sensíveis.
 
-Comandos auxiliares executados:
+### 3.3 Verificação dinâmica
 
-```bash
-sh ./mvnw dependency:build-classpath \
-  -Dmdep.outputFile=/private/tmp/sqa-social-media-api-test-classpath.txt \
-  -DincludeScope=test
+Os endpoints da API foram executados com dados controlados para confirmar alguns dos comportamentos encontrados durante a leitura do código. Também foram executadas as suítes automatizadas do backend e do frontend.
 
-java -cp "target/test-classes:target/classes:<classpath Maven>" \
-  com.demoapp.demo.DemoApplication \
-  --spring.datasource.url=jdbc:h2:mem:testdb \
-  --spring.datasource.driverClassName=org.h2.Driver \
-  --spring.datasource.username=sa \
-  --spring.datasource.password= \
-  --spring.jpa.hibernate.ddl-auto=create-drop
+### 3.4 Implementação dos testes
+
+Foram utilizados:
+
+- **JUnit 5 e MockMvc** no backend;
+- **Jest, React Testing Library e user-event** no frontend.
+
+Os testes foram estruturados de acordo com o padrão **Arrange, Act, Assert**:
+
+1. **Arrange:** preparação dos dados, objetos e mocks;
+2. **Act:** execução da ação testada;
+3. **Assert:** comparação do resultado obtido com o resultado esperado.
+
+---
+
+## 4. Visão geral da arquitetura
+
+### 4.1 Backend
+
+O backend está organizado em camadas:
+
+- `controller`: recebe e responde às requisições HTTP;
+- `service`: concentra regras de negócio e validações;
+- `repository`: realiza o acesso aos dados;
+- `model`: representa as entidades persistidas;
+- `dto`: representa objetos utilizados nas requisições e respostas.
+
+Os principais componentes são:
+
+- `AuthController`: cadastro, login e redefinição de senha;
+- `PostController`: feed, curtidas e publicações curtidas;
+- `UserService`: validação e persistência de usuários;
+- `PostService`: integração com a API DummyJSON e controle de curtidas.
+
+### 4.2 Frontend
+
+O frontend utiliza o App Router do Next.js e possui:
+
+- páginas de cadastro, login e redefinição de senha;
+- página inicial com feed de publicações;
+- página de publicações curtidas;
+- componentes reutilizáveis, como `Button`, `Input`, `Header` e `PostCard`;
+- `AuthContext` para manter o estado do usuário;
+- `localStorage` para persistência da autenticação;
+- Axios para comunicação com a API.
+
+---
+
+## 5. Análise dos requisitos funcionais
+
+| Área | Requisito analisado | Resultado |
+|---|---|---|
+| Cadastro | Cadastrar usuário com e-mail válido e senha forte | Parcialmente atendido |
+| Cadastro | Informar `E-mail já cadastrado` para duplicidade | Não atendido |
+| Cadastro | Aceitar senha forte com no mínimo 8 caracteres | Divergência entre frontend e backend |
+| Cadastro | Informar o critério de senha não atendido | Não atendido no backend |
+| Autenticação | Permitir login com credenciais válidas | Atendido no fluxo básico |
+| Autenticação | Informar `Credenciais inválidas` | Parcialmente atendido |
+| Redefinição | Informar `Usuário não encontrado` | Atendido |
+| Redefinição | Informar `E-mail enviado com sucesso` | Não atendido |
+| Header | Exibir opções adequadas conforme autenticação | Atendido apenas durante a sessão em memória |
+| Feed | Exibir título, conteúdo e botão de curtida | Atendido |
+| Curtida | Alertar usuário não autenticado | Atendido |
+| Curtida | Exibir feedback visual para usuário autenticado | Parcialmente atendido |
+| Posts curtidos | Restringir acesso a usuário autenticado | Não atendido de forma segura |
+
+A classificação **parcialmente atendido** indica que o fluxo existe, mas apresenta alguma inconsistência ou condição que impede o atendimento completo do requisito.
+
+---
+
+## 6. Defeitos identificados
+
+### 6.1 Defeitos funcionais do backend
+
+| ID | Defeito | Evidência principal | Severidade |
+|---|---|---|---|
+| BACK-01 | Mensagem de e-mail duplicado diferente do requisito | A API retorna `E-mail já está em uso`, mas o requisito define `E-mail já cadastrado` | Média |
+| BACK-02 | Validação de e-mail aceita formatos inválidos | O método considera válido qualquer texto que contenha `@` | Alta |
+| BACK-03 | Erro de senha não informa o critério violado | Todas as falhas retornam apenas `Senha inválida` | Média |
+| BACK-04 | Login pode retornar mensagem incorreta | Senha incorreta e fraca retorna `Senha inválida` em vez de `Credenciais inválidas` | Média |
+| BACK-05 | Mensagem de redefinição diverge do requisito | A API retorna `Senha redefinida com sucesso (fake)` | Média |
+| BACK-06 | Banco não garante unicidade do e-mail | Não existe restrição única na coluna de e-mail | Alta |
+| BACK-07 | Curtidas aceitam usuários inexistentes | O `userId` recebido não é validado | Alta |
+| BACK-08 | Curtidas aceitam publicações inexistentes | O `postId` é persistido sem validação prévia | Média |
+
+### 6.2 Defeitos funcionais do frontend
+
+| ID | Defeito | Evidência principal | Severidade |
+|---|---|---|---|
+| FRONT-01 | Persistência da autenticação utiliza chaves diferentes | `saveUser` grava em `user`, enquanto `getUser` lê `sqa_social_user` | Alta |
+| FRONT-02 | Senha forte com exatamente 8 caracteres é rejeitada | A condição utiliza `password.length <= 8` | Alta |
+| FRONT-03 | Frontend e backend aceitam caracteres especiais diferentes | As expressões regulares não possuem a mesma política | Média |
+| FRONT-04 | Validador e mensagem de senha são inconsistentes | O caractere `.` recebe tratamentos diferentes | Média |
+| FRONT-05 | Mensagem de redefinição diverge do requisito | A página apresenta outro texto e não utiliza a mensagem esperada | Média |
+| FRONT-06 | Falha HTTP pode manter o feedback visual de curtida | O erro é tratado no componente pai e não é propagado corretamente | Alta |
+| FRONT-07 | Logout não remove o registro realmente salvo | A função remove uma chave diferente da utilizada no login | Média |
+
+### 6.3 Problemas adicionais de segurança
+
+Os itens abaixo não constituem o foco principal dos testes obrigatórios, mas representam riscos relevantes de qualidade:
+
+| ID | Problema | Impacto |
+|---|---|---|
+| SEC-01 | Senhas armazenadas em texto puro | Exposição das credenciais em caso de acesso ao banco |
+| SEC-02 | Senha devolvida no JSON de cadastro e login | Exposição de dado sensível pela API |
+| SEC-03 | Ausência de autenticação e autorização reais | Qualquer cliente pode informar um `userId` arbitrário |
+| SEC-04 | Rota de posts curtidos protegida apenas no navegador | O estado local pode ser alterado manualmente |
+| SEC-05 | CORS liberado para qualquer origem | Ampliação desnecessária da superfície de acesso à API |
+
+### 6.4 Problemas adicionais de acessibilidade
+
+- labels dos formulários não estão associados aos campos com `htmlFor` e `id`;
+- o título clicável do cabeçalho não é acessível por teclado;
+- mensagens de erro não utilizam atributos como `aria-invalid` e `aria-describedby`.
+
+Esses problemas podem dificultar o uso da aplicação por pessoas que utilizam leitores de tela ou navegação por teclado.
+
+---
+
+## 7. Testes automatizados do backend
+
+Foram implementados três testes, atendendo à quantidade mínima solicitada.
+
+| ID | Tipo | Cenário | Resultado esperado | Resultado obtido |
+|---|---|---|---|---|
+| BACK-TEST-01 | Unitário | Validar senha forte com exatamente 8 caracteres | Teste aprovado | Aprovado |
+| BACK-TEST-02 | Integração de controller | Login com senha incorreta deve retornar HTTP 401 e `Credenciais inválidas` | Teste aprovado | Aprovado |
+| BACK-TEST-03 | Integração de controller | E-mail duplicado deve retornar HTTP 409 e `E-mail já cadastrado` | Teste deve evidenciar o bug | Falhou conforme esperado |
+
+### 7.1 Teste unitário do `UserService`
+
+O teste verifica diretamente o método de validação de senha, sem acessar banco, rede ou controller. Ele confirma que a política do backend aceita uma senha forte com exatamente oito caracteres.
+
+Esse cenário é adequado para teste unitário porque:
+
+- avalia uma regra isolada;
+- possui entrada e saída determinísticas;
+- não depende de infraestrutura externa;
+- executa rapidamente.
+
+### 7.2 Testes do `AuthController`
+
+Os testes do controller utilizam `MockMvc` com configuração isolada. Foi criado um `FakeUserService` para controlar o retorno do serviço sem utilizar banco de dados.
+
+Essa abordagem permite validar:
+
+- código HTTP;
+- estrutura do JSON;
+- mensagem devolvida ao cliente;
+- interação esperada entre controller e service.
+
+### 7.3 Bug comprovado no backend
+
+O teste de e-mail duplicado espera a mensagem definida no requisito:
+
+```text
+E-mail já cadastrado
 ```
 
-Uma tentativa anterior com `sh ./mvnw spring-boot:run` falhou porque o processo
-do plugin não localizou `com.demoapp.demo.DemoApplication`, apesar de a classe
-compilada existir em `target/classes`. A execução direta com o classpath Maven
-iniciou normalmente. Essa ocorrência foi tratada como problema de execução do
-ambiente/plugin, não como bug funcional.
+Entretanto, a implementação retorna:
 
-As verificações HTTP foram feitas com `curl` nos endpoints `/auth/signup`,
-`/auth/signin`, `/auth/reset-password` e `/posts/{postId}/like`.
+```text
+E-mail já está em uso
+```
 
-Resultados confirmados:
+A falha é intencional e comprova que o contrato da API não está de acordo com a especificação.
 
-| Requisição | Resultado observado |
-|---|---|
-| cadastro com `qa@example.com` e senha `Aa1!aaaa` | HTTP 200 e senha devolvida no JSON |
-| segundo cadastro com o mesmo e-mail | HTTP 409, mensagem `E-mail já está em uso` |
-| login do usuário existente com senha `x` | HTTP 422, mensagem `Senha inválida` |
-| redefinição de usuário existente | HTTP 200, mensagem `Senha redefinida com sucesso (fake)` |
-| cadastro com e-mail `malformado@` | HTTP 200 |
-| curtida com `userId=999999` | HTTP 200 e curtida criada |
+### 7.4 Resultado da execução
 
-Os dados foram descartados ao encerrar o banco H2.
-
-### Frontend
-
-#### `cd client && npm install`
-
-- Resultado: falhou com código 127.
-- Erro: o pós-install de `unrs-resolver` não encontrou o comando
-  `napi-postinstall`.
-- O pacote consta no `package-lock.json`, mas não ficou disponível durante o
-  script de instalação.
-- Possível causa: instalação incompleta/inconsistência do ambiente npm ou da
-  árvore materializada pelo lockfile.
-- Impacto sobre os testes: `node_modules` não foi criado; build, lint e Jest não
-  podem iniciar.
-- Classificação: erro de ambiente/dependência, não bug funcional.
-
-#### `cd client && npm run lint`
-
-- Resultado: falhou com código 127.
-- Erro: `eslint: command not found`.
-- Causa: consequência da falha do `npm install`.
-- Impacto: não foi possível validar regras estáticas.
-
-#### `cd client && npm run build`
-
-- Resultado: falhou com código 127.
-- Erro: `next: command not found`.
-- Causa: consequência da falha do `npm install`.
-- Impacto: não foi possível validar compilação e geração do build Next.js.
-
-#### `cd client && npm test -- --runInBand`
-
-- Resultado: falhou com código 127.
-- Erro: `jest: command not found`.
-- Causa: consequência da falha do `npm install`.
-- Impacto: não foi possível iniciar o Jest. Mesmo com as dependências
-  instaladas, o repositório atual não contém arquivos de teste.
-
-## 4. Matriz de requisitos
-
-| Área | Requisito | Estado | Evidência resumida |
-|---|---|---|---|
-| Cadastro | cadastrar com e-mail válido e senha forte | Parcial | fluxo existe, mas validações de e-mail e senha divergem entre camadas |
-| Cadastro | duplicidade retorna `E-mail já cadastrado` | Falha | API retorna `E-mail já está em uso` |
-| Cadastro | senha aceita com mínimo de 8 caracteres | Falha no frontend | cliente exige mais de 8; API aceita exatamente 8 |
-| Cadastro | mensagem específica por critério de senha | Parcial | cliente lista critérios; API retorna apenas `Senha inválida` |
-| Cadastro | autenticar e redirecionar para `/` | Parcial | funciona em memória, mas a persistência da autenticação está quebrada |
-| Login | credenciais corretas autenticam | Parcial | funciona para senhas aceitas pela política do backend |
-| Login | credenciais incorretas retornam `Credenciais inválidas` | Falha em parte dos casos | senha incorreta fraca retorna `Senha inválida`/422 |
-| Login | redirecionar para `/` | Atende na sessão atual | `router.push("/")` é executado após sucesso |
-| Redefinição | aceitar e-mail válido | Parcial | backend considera qualquer texto com `@` válido |
-| Redefinição | não cadastrado retorna `Usuário não encontrado` | Atende | API retorna mensagem exata e HTTP 404 |
-| Redefinição | cadastrado retorna `E-mail enviado com sucesso` | Falha | API e frontend usam textos diferentes do requisito |
-| Header | opções de usuário deslogado | Atende na sessão atual | exibe `Entrar` e `Criar Conta` |
-| Header | opções de usuário logado | Parcial | funciona em memória; falha após recarregar |
-| Header | título redireciona para `/` | Funcional, com problema de acessibilidade | clique chama `router.push("/")` |
-| Feed | exibir título, corpo e botão de curtida | Atende | `PostCard` renderiza os três elementos |
-| Feed | alert para usuário deslogado | Atende | texto é exatamente o solicitado |
-| Feed | feedback visual ao curtir | Parcial | existe atualização otimista, mas rollback falha em erro HTTP |
-| Posts curtidos | acesso somente autenticado | Falha de segurança | proteção apenas client-side e API aceita qualquer `userId` |
-| Posts curtidos | listar curtidas do usuário | Parcial | funciona com estado válido, mas identidade pode ser forjada e depende da DummyJSON |
-
-## 5. Bugs de backend
-
-### BUG-BACK-001 — Mensagem de e-mail duplicado diverge do requisito
-
-- Camada: controller de autenticação.
-- Requisito: e-mail duplicado deve apresentar exatamente `E-mail já cadastrado`.
-- Arquivo: `api/src/main/java/com/demoapp/demo/controller/AuthController.java:43`.
-- Função ou componente: `signup`.
-- Severidade: média.
-- Classificação: bug funcional.
-- Comportamento esperado: HTTP 409 com mensagem `E-mail já cadastrado`.
-- Comportamento atual: HTTP 409 com mensagem `E-mail já está em uso`.
-- Passos para reprodução: cadastrar um e-mail válido e repetir o cadastro.
-- Evidência: execução real retornou
-  `{"message":"E-mail já está em uso","status":409}`.
-- Teste automatizado recomendado: teste de controller/API que faça dois
-  cadastros com o mesmo e-mail e compare a mensagem exata.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-BACK-002 — Validação de e-mail aceita endereços malformados
-
-- Camada: service de usuário.
-- Requisito: cadastro e redefinição devem usar e-mail válido.
-- Arquivo: `api/src/main/java/com/demoapp/demo/service/UserService.java:17`.
-- Função ou componente: `isEmailValid`.
-- Severidade: alta.
-- Classificação: bug funcional.
-- Comportamento esperado: exigir formato válido com parte local, domínio e
-  extensão.
-- Comportamento atual: qualquer texto não nulo que contenha `@` é aceito.
-- Passos para reprodução: enviar cadastro com `malformado@` e uma senha forte.
-- Evidência: execução real retornou HTTP 200 e criou o usuário.
-- Teste automatizado recomendado: teste unitário parametrizado com `a@`, `@b`,
-  `teste@dominio` e espaços.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-BACK-003 — Erro de senha não informa o critério violado
-
-- Camada: controller/service de autenticação.
-- Requisito: cada requisito de senha não atendido deve apresentar mensagem
-  específica.
-- Arquivo: `api/src/main/java/com/demoapp/demo/controller/AuthController.java:37`.
-- Função ou componente: `signup`.
-- Severidade: média.
-- Classificação: bug funcional.
-- Comportamento esperado: informar se falta tamanho mínimo, maiúscula,
-  minúscula, número ou caractere especial.
-- Comportamento atual: todas as violações retornam somente `Senha inválida`.
-- Passos para reprodução: cadastrar usando `abcdefgh`.
-- Evidência: existe um único ramo de erro para toda a expressão regular.
-- Teste automatizado recomendado: testes de controller para cada critério da
-  senha, verificando mensagens específicas.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-BACK-004 — Login com credencial incorreta pode retornar a mensagem errada
-
-- Camada: controller de autenticação.
-- Requisito: credenciais incorretas devem apresentar `Credenciais inválidas`.
-- Arquivo: `api/src/main/java/com/demoapp/demo/controller/AuthController.java:61`.
-- Função ou componente: `signin`.
-- Severidade: média.
-- Classificação: bug funcional.
-- Comportamento esperado: qualquer senha incorreta para um login deve resultar
-  em `Credenciais inválidas`.
-- Comportamento atual: antes de conferir a credencial, o endpoint aplica a
-  política de senha de cadastro; senhas incorretas fracas retornam
-  `Senha inválida` com HTTP 422.
-- Passos para reprodução: criar um usuário e tentar login com a senha `x`.
-- Evidência: execução real retornou
-  `{"message":"Senha inválida","status":422}`.
-- Teste automatizado recomendado: teste de integração de login com usuário
-  existente e senha incorreta curta.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-BACK-005 — Resposta de redefinição bem-sucedida tem texto incorreto
-
-- Camada: controller de autenticação.
-- Requisito: apresentar `E-mail enviado com sucesso`.
-- Arquivo: `api/src/main/java/com/demoapp/demo/controller/AuthController.java:93`.
-- Função ou componente: `resetPassword`.
-- Severidade: média.
-- Classificação: bug funcional.
-- Comportamento esperado: HTTP 200 com a mensagem exata do requisito.
-- Comportamento atual: retorna `Senha redefinida com sucesso (fake)`.
-- Passos para reprodução: cadastrar um usuário e solicitar redefinição com o
-  mesmo e-mail.
-- Evidência: resposta real
-  `{"message":"Senha redefinida com sucesso (fake)"}`.
-- Teste automatizado recomendado: teste de controller/API verificando a
-  mensagem exata.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-BACK-006 — Banco não garante unicidade de e-mail
-
-- Camada: entidade/persistência.
-- Requisito: e-mail já existente não deve gerar outro cadastro.
-- Arquivo: `api/src/main/java/com/demoapp/demo/model/User.java:17`.
-- Função ou componente: campo `email`.
-- Severidade: alta.
-- Classificação: bug funcional e problema de arquitetura.
-- Comportamento esperado: unicidade protegida também por constraint no banco.
-- Comportamento atual: a duplicidade depende de uma consulta anterior ao
-  `save`; não há `unique` na coluna. Requisições concorrentes podem criar
-  duplicatas.
-- Passos para reprodução: disparar cadastros simultâneos com o mesmo e-mail em
-  uma base vazia.
-- Evidência: DDL do H2 criou `email varchar(255)` sem constraint única.
-- Teste automatizado recomendado: teste de integração concorrente ou teste do
-  schema verificando a restrição única.
-- O teste deve passar ou falhar: pode falhar de forma concorrente no estado
-  atual.
-
-### BUG-BACK-007 — Curtidas aceitam usuários inexistentes
-
-- Camada: controller/service/persistência de posts.
-- Requisito: curtidas e posts curtidos devem pertencer ao usuário autenticado.
-- Arquivo: `api/src/main/java/com/demoapp/demo/service/PostService.java:128`.
-- Função ou componente: `toggleLike`.
-- Severidade: alta.
-- Classificação: bug funcional.
-- Comportamento esperado: validar a existência e identidade do usuário antes de
-  persistir a curtida.
-- Comportamento atual: qualquer número recebido em `userId` é salvo.
-- Passos para reprodução: `POST /posts/1/like?userId=999999`.
-- Evidência: execução real retornou HTTP 200 e `{"postId":1,"liked":true}`.
-- Teste automatizado recomendado: teste de API usando um ID inexistente e
-  esperando rejeição 401, 403 ou 404.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-BACK-008 — Curtidas aceitam IDs de posts sem validação
-
-- Camada: service de posts.
-- Requisito: a lista de posts curtidos deve conter posts reais que o usuário
-  curtiu.
-- Arquivo: `api/src/main/java/com/demoapp/demo/service/PostService.java:136`.
-- Função ou componente: `toggleLike`.
-- Severidade: média.
-- Classificação: bug funcional.
-- Comportamento esperado: validar a existência do post antes de persistir.
-- Comportamento atual: o `postId` é salvo sem consulta ou validação. O erro só
-  aparece posteriormente ao tentar buscar o post na DummyJSON.
-- Passos para reprodução: curtir um ID inexistente e depois abrir posts
-  curtidos.
-- Evidência: não existe validação entre a leitura do parâmetro e o `save`.
-- Teste automatizado recomendado: teste de API com ID de post inexistente,
-  seguido de consulta à lista.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-## 6. Bugs de frontend
-
-### BUG-FRONT-001 — Chaves diferentes quebram a persistência da autenticação
-
-- Camada: armazenamento local/contexto de autenticação.
-- Requisito: após cadastro ou login, o usuário deve permanecer autenticado.
-- Arquivo: `client/src/lib/localStorage.ts:1`.
-- Função ou componente: `saveUser`, `getUser` e `removeUser`.
-- Severidade: alta.
-- Classificação: bug funcional.
-- Comportamento esperado: salvar, ler e remover o usuário usando a mesma chave.
-- Comportamento atual: `saveUser` grava em `user`, enquanto `getUser` e
-  `removeUser` usam `sqa_social_user`.
-- Passos para reprodução: fazer login, recarregar a página e observar o header.
-- Evidência: linhas 10, 19 e 34 usam chaves incompatíveis.
-- Teste automatizado recomendado: teste unitário de round-trip
-  `saveUser -> getUser` e teste de integração com remount do `AuthProvider`.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-FRONT-002 — Senha com exatamente 8 caracteres é rejeitada
-
-- Camada: utilitário/formulário de cadastro.
-- Requisito: senha deve ter no mínimo 8 caracteres.
-- Arquivo: `client/src/utils/password.ts:2`.
-- Função ou componente: `isPasswordValid`.
-- Severidade: alta.
-- Classificação: bug funcional.
-- Comportamento esperado: uma senha forte de 8 caracteres deve ser aceita.
-- Comportamento atual: a condição `password.length <= 8` exige pelo menos 9.
-- Passos para reprodução: usar `Aa1!aaaa` no cadastro.
-- Evidência: a API aceitou essa senha com HTTP 200, enquanto o utilitário do
-  cliente retorna `false`.
-- Teste automatizado recomendado: teste unitário com uma senha forte de
-  exatamente 8 caracteres.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-FRONT-003 — Caracteres especiais aceitos divergem do backend
-
-- Camada: validação de cadastro.
-- Requisito: frontend e backend devem concordar sobre senha forte.
-- Arquivo: `client/src/utils/password.ts:9` e
-  `api/src/main/java/com/demoapp/demo/service/UserService.java:22`.
-- Função ou componente: `isPasswordValid` nas duas camadas.
-- Severidade: média.
-- Classificação: bug funcional.
-- Comportamento esperado: a mesma senha deve ter o mesmo resultado nas duas
-  camadas.
-- Comportamento atual: o frontend aceita caracteres como `#`, `^`, `(` e `_`,
-  mas o backend aceita apenas `@ $ ! % * ? &`.
-- Passos para reprodução: cadastrar com `Abcdef12#`.
-- Evidência: a expressão do cliente inclui `#`; a expressão Java não.
-- Teste automatizado recomendado: teste de integração da tela com uma senha
-  aceita localmente e rejeitada pela API.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-FRONT-004 — Validador e mensagem discordam sobre o caractere ponto
-
-- Camada: utilitário de senha.
-- Requisito: cada requisito não atendido deve apresentar mensagem específica.
-- Arquivo: `client/src/utils/password.ts:9` e `client/src/utils/password.ts:37`.
-- Função ou componente: `isPasswordValid` e `getPasswordValidationMessage`.
-- Severidade: média.
-- Classificação: bug funcional.
-- Comportamento esperado: quando a senha é inválida, a função de mensagem deve
-  explicar a causa.
-- Comportamento atual: `.` não é aceito por `isPasswordValid`, mas é aceito pelo
-  regex da mensagem. Uma senha com tamanho suficiente e `.` pode ser inválida e
-  produzir mensagem vazia.
-- Passos para reprodução: chamar as duas funções com `Abcdef12.`.
-- Evidência: os conjuntos de caracteres especiais são diferentes.
-- Teste automatizado recomendado: teste unitário que exija resultado e mensagem
-  consistentes para a mesma senha.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-FRONT-005 — Mensagem de sucesso da redefinição diverge do requisito
-
-- Camada: página de redefinição.
-- Requisito: apresentar `E-mail enviado com sucesso`.
-- Arquivo: `client/src/app/reset-password/page.tsx:47`.
-- Função ou componente: `handleSubmit`.
-- Severidade: média.
-- Classificação: bug funcional.
-- Comportamento esperado: mostrar a mensagem exata, em formato de toast.
-- Comportamento atual: mostra
-  `Email enviado com sucesso para alterar a senha! Redirecionando...` em uma
-  `div` comum.
-- Passos para reprodução: solicitar redefinição para usuário existente.
-- Evidência: texto fixo no estado `successMessage`; a resposta da API é
-  ignorada.
-- Teste automatizado recomendado: teste de integração da página com serviço
-  mockado, verificando o texto exato.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-FRONT-006 — Feedback da curtida não volta ao estado anterior em falha HTTP
-
-- Camada: componente de post e página inicial.
-- Requisito: feedback visual deve representar o estado real da curtida.
-- Arquivo: `client/src/components/PostCard.tsx:20` e
-  `client/src/app/page.tsx:50`.
-- Função ou componente: `PostCard.handleLike` e `Home.handleLike`.
-- Severidade: alta.
-- Classificação: bug funcional.
-- Comportamento esperado: se a API falhar, componente e página devem restaurar
-  o estado anterior.
-- Comportamento atual: `Home.handleLike` captura o erro e não o relança.
-  Portanto, `PostCard` entende que a operação terminou com sucesso e mantém seu
-  estado local otimista, mesmo depois do rollback no estado da página.
-- Passos para reprodução: autenticar, simular falha no POST de curtida e clicar
-  em `Curtir`.
-- Evidência: existem dois estados otimistas para a mesma informação e o erro é
-  consumido pelo callback pai.
-- Teste automatizado recomendado: teste de integração com
-  `toggleLikePost` rejeitando e verificação de que o botão volta para `Curtir`.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### BUG-FRONT-007 — Logout não remove o registro realmente salvo
-
-- Camada: armazenamento local.
-- Requisito: `Sair` deve encerrar a autenticação.
-- Arquivo: `client/src/lib/localStorage.ts:32`.
-- Função ou componente: `removeUser`.
-- Severidade: média.
-- Classificação: bug funcional e de privacidade.
-- Comportamento esperado: remover do navegador os dados gravados no login.
-- Comportamento atual: o login grava em `user`, mas o logout remove
-  `sqa_social_user`; o registro `user` permanece no navegador.
-- Passos para reprodução: fazer login, clicar em `Sair` e inspecionar o
-  `localStorage`.
-- Evidência: chaves divergentes nas funções de salvar e remover.
-- Teste automatizado recomendado: teste unitário que salve, remova e confirme
-  que nenhuma chave de usuário permanece.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-## 7. Problemas de segurança
-
-### SEC-001 — Senhas são armazenadas em texto puro
-
-- Camada: persistência/autenticação.
-- Requisito: proteção das credenciais do usuário.
-- Arquivo: `api/src/main/java/com/demoapp/demo/service/UserService.java:26`.
-- Função ou componente: `createUser`.
-- Severidade: crítica.
-- Classificação: bug de segurança.
-- Comportamento esperado: armazenar hash forte e salt, por exemplo BCrypt ou
-  Argon2.
-- Comportamento atual: a senha original é copiada diretamente para a entidade.
-- Passos para reprodução: cadastrar usuário e consultar a coluna `password`.
-- Evidência: `user.setPassword(password)` sem encoder.
-- Teste automatizado recomendado: teste de integração garantindo que o valor
-  persistido seja diferente da senha fornecida e validável por um encoder.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### SEC-002 — API devolve a senha nas respostas de cadastro e login
-
-- Camada: contrato HTTP/serialização.
-- Requisito: não expor credenciais.
-- Arquivo: `api/src/main/java/com/demoapp/demo/controller/AuthController.java:50`.
-- Função ou componente: `signup` e `signin`.
-- Severidade: crítica.
-- Classificação: bug de segurança.
-- Comportamento esperado: retornar DTO público contendo somente dados seguros.
-- Comportamento atual: a entidade `User`, incluindo `password`, é serializada.
-- Passos para reprodução: cadastrar ou autenticar um usuário.
-- Evidência: execução real retornou
-  `{"id":1,"email":"qa@example.com","password":"Aa1!aaaa"}`.
-- Teste automatizado recomendado: teste de API verificando que a propriedade
-  `password` não existe no JSON.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### SEC-003 — Não existe autenticação ou autorização real nos endpoints de posts
-
-- Camada: segurança da API.
-- Requisito: posts curtidos devem ser acessíveis somente pelo usuário
-  autenticado.
-- Arquivo: `api/src/main/java/com/demoapp/demo/controller/PostController.java:37`.
-- Função ou componente: `getLikedPosts` e `toggleLike`.
-- Severidade: crítica.
-- Classificação: bug de segurança.
-- Comportamento esperado: identificar o usuário por sessão/token validado no
-  servidor e autorizar o acesso.
-- Comportamento atual: qualquer consumidor escolhe um `userId` na query string,
-  podendo consultar ou alterar curtidas de terceiros.
-- Passos para reprodução: chamar `/posts/liked?userId=<id>` ou
-  `/posts/{postId}/like?userId=<id>` sem login.
-- Evidência: não existe Spring Security e os endpoints não recebem principal ou
-  token.
-- Teste automatizado recomendado: testes de API sem credencial e com tentativa
-  de acesso a outro usuário.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### SEC-004 — Proteção de `/auth/liked` é somente client-side e pode ser forjada
-
-- Camada: frontend/autorização.
-- Requisito: rota acessível somente por usuários autenticados.
-- Arquivo: `client/src/app/auth/liked/page.tsx:20`.
-- Função ou componente: `LikedPosts`.
-- Severidade: alta.
-- Classificação: bug de segurança.
-- Comportamento esperado: proteção no servidor/middleware e API autenticada.
-- Comportamento atual: a página confia em um objeto do `localStorage`; não há
-  token verificável. Um usuário pode forjar `{id, email}`.
-- Passos para reprodução: inserir manualmente o objeto esperado no
-  `localStorage` e acessar a rota.
-- Evidência: `isAuthenticated` significa apenas `user !== null`.
-- Teste automatizado recomendado: E2E tentando acessar a rota sem sessão válida
-  e com armazenamento local forjado.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### SEC-005 — CORS permite qualquer origem
-
-- Camada: configuração HTTP.
-- Requisito: reduzir exposição indevida da API.
-- Arquivo: controllers `AuthController.java:18` e `PostController.java:10`.
-- Função ou componente: `@CrossOrigin(origins = "*")`.
-- Severidade: média.
-- Classificação: bug de segurança.
-- Comportamento esperado: limitar origens aos clientes autorizados, sobretudo
-  quando autenticação real for adicionada.
-- Comportamento atual: qualquer site pode fazer chamadas cross-origin.
-- Passos para reprodução: enviar preflight a partir de origem arbitrária.
-- Evidência: wildcard nos dois controllers.
-- Teste automatizado recomendado: teste HTTP de política CORS.
-- O teste deve passar ou falhar: deve falhar após a política esperada ser
-  definida; no estado atual qualquer origem é aceita.
-
-## 8. Problemas de acessibilidade
-
-### A11Y-001 — Labels não estão associados aos inputs
-
-- Camada: componente de formulário.
-- Requisito: formulários utilizáveis por leitores de tela e por clique no label.
-- Arquivo: `client/src/components/Input.tsx:12`.
-- Função ou componente: `Input`.
-- Severidade: alta.
-- Classificação: problema de acessibilidade.
-- Comportamento esperado: `label` com `htmlFor` apontando para um `input` com
-  `id`.
-- Comportamento atual: o label e o input são apenas elementos vizinhos.
-- Passos para reprodução: consultar o campo por nome acessível ou clicar no
-  label.
-- Evidência: não existem `htmlFor` nem `id` nas páginas que usam o componente.
-- Teste automatizado recomendado: Testing Library com `getByLabelText`.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### A11Y-002 — Título clicável do header não é operável por teclado
-
-- Camada: header/navegação.
-- Requisito: navegação acessível.
-- Arquivo: `client/src/components/Header.tsx:33`.
-- Função ou componente: título `SQA Social Media`.
-- Severidade: média.
-- Classificação: problema de acessibilidade.
-- Comportamento esperado: usar link ou botão focável e acionável por teclado.
-- Comportamento atual: um `h1` recebe apenas `onClick`.
-- Passos para reprodução: navegar somente com Tab e tentar ativar o título.
-- Evidência: não há `tabIndex`, papel interativo ou handler de teclado.
-- Teste automatizado recomendado: teste de acessibilidade e navegação por
-  teclado.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-### A11Y-003 — Erros de formulário não são ligados aos campos nem anunciados
-
-- Camada: formulários.
-- Requisito: feedback de validação acessível.
-- Arquivo: `client/src/components/Input.tsx:38`.
-- Função ou componente: mensagem `error`.
-- Severidade: média.
-- Classificação: problema de acessibilidade.
-- Comportamento esperado: usar `aria-invalid`, `aria-describedby` e região
-  `aria-live` quando necessário.
-- Comportamento atual: o erro é exibido somente como parágrafo visual.
-- Passos para reprodução: submeter formulário inválido com leitor de tela.
-- Evidência: ausência dos atributos ARIA no componente.
-- Teste automatizado recomendado: assertions sobre nome acessível, descrição e
-  estado inválido.
-- O teste deve passar ou falhar: falhar no estado atual.
-
-## 9. Problemas de arquitetura e testabilidade
-
-### ARCH-001 — `PostService` ignora o `RestTemplate` configurado e cria dependência concreta
-
-- Camada: integração externa.
-- Requisito: integração confiável e testável com DummyJSON.
-- Arquivo: `api/src/main/java/com/demoapp/demo/service/PostService.java:20`.
-- Função ou componente: construtor de `PostService`.
-- Severidade: alta.
-- Classificação: problema de arquitetura e testabilidade.
-- Comportamento esperado: injetar o bean `RestTemplate` criado em `AppConfig`.
-- Comportamento atual: o service executa `new RestTemplate()`, dificultando mock,
-  timeout e configuração centralizada.
-- Passos para reprodução: tentar criar teste unitário do service sem acessar a
-  rede.
-- Evidência: o bean configurado não é usado pelo service.
-- Teste automatizado recomendado: teste unitário com cliente HTTP injetado e
-  mockado.
-- O teste deve passar ou falhar: a implementação atual exige refatoração para
-  isolamento adequado.
-
-### ARCH-002 — Feed e posts curtidos dependem da DummyJSON sem isolamento ou timeout
-
-- Camada: integração externa.
-- Requisito: feed disponível e testes determinísticos.
-- Arquivo: `api/src/main/java/com/demoapp/demo/service/PostService.java:28`.
-- Função ou componente: `getPosts` e `getLikedPosts`.
-- Severidade: alta.
-- Classificação: problema de arquitetura e testabilidade.
-- Comportamento esperado: cliente configurável, timeout, tratamento de falha e
-  possibilidade de stub/mock.
-- Comportamento atual: URLs estão fixas e cada consulta de curtidos faz chamadas
-  externas sequenciais.
-- Passos para reprodução: executar feed sem internet ou durante indisponibilidade
-  da DummyJSON.
-- Evidência: chamadas diretas para `https://dummyjson.com`.
-- Teste automatizado recomendado: testes com servidor HTTP stub e cenários de
-  timeout/erro.
-- O teste deve passar ou falhar: testes que esperem degradação controlada podem
-  falhar no estado atual.
-
-### ARCH-003 — Não existem testes automatizados no estado atual
-
-- Camada: backend e frontend.
-- Requisito: Atividade 4 exige testes unitários e de integração.
-- Arquivo: `api/src/test/` e projeto `client/`.
-- Função ou componente: suíte de testes.
-- Severidade: alta.
-- Classificação: problema de testabilidade.
-- Comportamento esperado: no mínimo 3 testes de backend e 6 de frontend,
-  respeitando as categorias da atividade.
-- Comportamento atual: somente propriedades de teste da API existem; nenhum
-  arquivo `*Test.java`, `*.test.*` ou `*.spec.*` foi encontrado.
-- Passos para reprodução: executar Maven e procurar testes no cliente.
-- Evidência: Maven informa `No sources to compile`.
-- Teste automatizado recomendado: criar as suítes em etapa posterior.
-- O teste deve passar ou falhar: não aplicável; atualmente não há testes.
-
-### ARCH-004 — `jest-dom` está instalado, mas não está configurado globalmente
-
-- Camada: configuração de testes frontend.
-- Requisito: suporte adequado a assertions de DOM.
-- Arquivo: `client/jest.config.ts:144`.
-- Função ou componente: `setupFilesAfterEnv`.
-- Severidade: média.
-- Classificação: problema de testabilidade.
-- Comportamento esperado: importar `@testing-library/jest-dom` em arquivo de
-  setup ou em cada suíte.
-- Comportamento atual: a dependência existe, mas `setupFilesAfterEnv` permanece
-  comentado.
-- Passos para reprodução: escrever teste usando `toBeInTheDocument` sem import
-  local.
-- Evidência: ausência de setup e de arquivos de teste que façam o import.
-- Teste automatizado recomendado: teste mínimo de componente com matcher do
-  `jest-dom`.
-- O teste deve passar ou falhar: falhará sem import/configuração.
-
-### ARCH-005 — Tipos TypeScript não representam completamente as respostas da API
-
-- Camada: contrato cliente/API.
-- Requisito: contratos consistentes.
-- Arquivo: `client/src/service/types/index.ts:16`.
-- Função ou componente: `SignInResponse` e `LikedPostsResponse`.
-- Severidade: média.
-- Classificação: problema de arquitetura.
-- Comportamento esperado: tipos compartilhados ou DTOs equivalentes ao JSON
-  público.
-- Comportamento atual: a API de autenticação devolve `password`, ausente no tipo;
-  a API de curtidos devolve `skip`, ausente em `LikedPostsResponse`.
-- Passos para reprodução: inspecionar JSON real e comparar com interfaces.
-- Evidência: resposta real de cadastro contém senha; `PostService` adiciona
-  `skip`.
-- Teste automatizado recomendado: testes de contrato/schema entre API e
-  frontend.
-- O teste deve passar ou falhar: falhar no estado atual se o schema for estrito.
-
-### ARCH-006 — Exceções são capturadas genericamente e detalhes internos vão para a resposta
-
-- Camada: tratamento de erros.
-- Requisito: respostas HTTP previsíveis e seguras.
-- Arquivo: `api/src/main/java/com/demoapp/demo/controller/PostController.java:30`.
-- Função ou componente: todos os endpoints de posts.
-- Severidade: média.
-- Classificação: problema de arquitetura e segurança.
-- Comportamento esperado: exceções específicas, códigos adequados e mensagens
-  públicas controladas.
-- Comportamento atual: qualquer exceção vira HTTP 500 e concatena
-  `e.getMessage()` no corpo.
-- Passos para reprodução: provocar erro de rede ou paginação inválida.
-- Evidência: blocos `catch (Exception e)` nos três endpoints.
-- Teste automatizado recomendado: testes de erro externo e entrada inválida,
-  verificando status e ausência de detalhes internos.
-- O teste deve passar ou falhar: pode falhar no estado atual.
-
-## 10. Casos de teste recomendados
-
-### Backend
-
-1. Aceitar senha forte com exatamente 8 caracteres.
-2. Rejeitar cada critério ausente da senha com mensagem específica.
-3. Rejeitar e-mails sem domínio, extensão ou parte local.
-4. Retornar exatamente `E-mail já cadastrado` no segundo cadastro.
-5. Retornar `Credenciais inválidas` para qualquer senha incorreta.
-6. Não serializar `password` em cadastro e login.
-7. Armazenar hash em vez da senha original.
-8. Retornar `E-mail enviado com sucesso` na redefinição válida.
-9. Rejeitar curtida de usuário inexistente.
-10. Rejeitar curtida de post inexistente.
-11. Bloquear consulta e alteração de curtidas sem autenticação.
-12. Cobrir falha e timeout da DummyJSON com cliente HTTP mockado.
-
-### Frontend unitário
-
-1. `isEmailValid` para formatos válidos e inválidos.
-2. `isPasswordValid` com exatamente 8 caracteres.
-3. Consistência entre `isPasswordValid` e
-   `getPasswordValidationMessage`.
-4. Round-trip de `saveUser`, `getUser` e `removeUser`.
-5. `Button` em estado normal, loading e disabled.
-6. `PostCard` para usuário deslogado e falha no callback de curtida.
-
-### Frontend integração
-
-1. Cadastro válido autentica e navega para `/`.
-2. Cadastro duplicado exibe a mensagem contratual exata.
-3. Login incorreto exibe `Credenciais inválidas`.
-4. Redefinição válida exibe `E-mail enviado com sucesso`.
-5. Header troca opções após login e volta após logout.
-6. Autenticação sobrevive a remount/reload.
-7. Feed renderiza posts retornados pelo serviço.
-8. Falha de curtida restaura o texto e estilo anteriores.
-9. `/auth/liked` redireciona usuário sem sessão válida.
-10. Formulários podem ser consultados por labels acessíveis.
-
-## 11. Riscos e dependências externas
-
-- O feed e a lista de curtidos dependem da disponibilidade e do formato da
-  DummyJSON.
-- Testes de `PostService` podem acessar a internet acidentalmente porque o
-  `RestTemplate` é criado internamente.
-- Cada post curtido gera uma chamada externa separada, aumentando latência e
-  chance de falha parcial.
-- O MySQL padrão exige configuração manual; placeholders permanecem no
-  `application.properties`.
-- O H2 de teste está configurado, mas não há testes que o utilizem.
-- O `npm install` não concluiu neste ambiente, bloqueando lint, build e Jest.
-- O wrapper Maven não está executável diretamente.
-- Ausência de autenticação real torna testes E2E de “usuário autenticado”
-  representações de estado local, não validações de segurança.
-- Não há constraint de unicidade nem relacionamento/foreign key entre usuários
-  e reações.
-
-## 12. Bugs recomendados para os testes que devem falhar
-
-### Melhor candidato de backend
-
-`BUG-BACK-001 — Mensagem de e-mail duplicado diverge do requisito`
-
-Motivos:
-
-- requisito textual e objetivo;
-- reprodução determinística;
-- não depende de serviço externo;
-- demonstra teste de integração/controller;
-- falha atual é fácil de explicar na apresentação.
-
-Alternativas fortes:
-
-- `BUG-BACK-002` — e-mail `malformado@` aceito;
-- `BUG-BACK-004` — senha incorreta curta retorna `Senha inválida`;
-- `SEC-002` — senha aparece no JSON;
-- `BUG-BACK-007` — curtida aceita usuário inexistente.
-
-### Melhor candidato de frontend
-
-`BUG-FRONT-002 — Senha com exatamente 8 caracteres é rejeitada`
-
-Motivos:
-
-- requisito inequívoco;
-- função pura, teste rápido e determinístico;
-- não exige mocks complexos;
-- evidencia claramente o erro de fronteira `<= 8`.
-
-Alternativas fortes:
-
-- `BUG-FRONT-001` — round-trip do `localStorage` falha;
-- `BUG-FRONT-004` — senha inválida pode gerar mensagem vazia;
-- `BUG-FRONT-005` — mensagem de redefinição divergente;
-- `BUG-FRONT-006` — rollback visual incorreto em falha de curtida.
-
-### Requisitos que estão funcionando no cenário básico
-
-- cadastro com e-mail convencional e senha forte maior que 8 caracteres;
-- login com credenciais corretas e senha dentro da política do backend;
-- erro `Credenciais inválidas` quando a senha incorreta também passa pela
-  política de força;
-- erro `Usuário não encontrado` para redefinição de e-mail válido não
-  cadastrado;
-- redirecionamento para `/` após cadastro e login na sessão atual;
-- botões de header para os dois estados enquanto o Context mantém o usuário;
-- navegação dos botões e clique do título;
-- renderização de título, corpo e botão nos posts;
-- alert exato ao tentar curtir sem autenticação;
-- feedback visual otimista em uma requisição de curtida bem-sucedida;
-- redirecionamento client-side de `/auth/liked` quando o Context está vazio.
-
-## Testes de backend implementados
-
-| ID | Classe | Tipo | Requisito | Deve passar? | Resultado |
-|---|---|---|---|---|---|
-| BACK-TEST-001 | `UserServiceTest` | Unitário | Senha forte com exatamente 8 caracteres deve ser aceita | Sim | Aprovado |
-| BACK-TEST-002 | `AuthControllerTest` | Controller isolado com MockMvc | Login com senha incorreta, mas complexa, deve retornar HTTP 401 e `Credenciais inválidas` | Sim | Aprovado |
-| BACK-TEST-003 | `AuthControllerTest` | Controller isolado com MockMvc | E-mail duplicado deve retornar HTTP 409 e `E-mail já cadastrado` | Não, enquanto o bug existir | Reprovado pelo bug `BUG-BACK-001` |
-
-### Estratégia
-
-- JUnit 5 foi usado no teste unitário de `UserService`.
-- MockMvc em modo `standaloneSetup` e um fake controlado de `UserService` foram
-  usados para isolar o contrato do `AuthController`.
-- Nenhum teste utiliza MySQL, dados preexistentes ou chamadas externas.
-- O H2 de teste permanece configurado para futuras suítes de persistência, mas
-  não é necessário nos três cenários atuais.
-- O teste de duplicidade confirma primeiro HTTP 409, conteúdo JSON, campo
-  `status` e ausência de chamada a `createUser`. A única assertion que reprova é
-  a comparação da mensagem exigida pelo requisito.
-
-### Resultado da execução
-
-Comando solicitado no diretório original:
+Comando utilizado:
 
 ```bash
 cd api
 sh ./mvnw clean test
 ```
 
-Esse comando encontrou uma falha de infraestrutura porque o caminho absoluto do
-workspace contém `Codes:Local Projects`. Em sistemas Unix, `:` é o separador do
-classpath Java; por isso, o Maven fragmentou o caminho de `target/classes` e o
-compilador de testes não encontrou as classes principais já compiladas.
-
-Para eliminar essa interferência ambiental, o diretório `api` foi copiado sem
-alterações para um caminho temporário sem `:` e o mesmo comando foi executado:
-
-```bash
-cd /private/tmp/sqa-social-media-api-final.<sufixo>/api
-sh ./mvnw clean test
-```
-
-Resultado:
+Resultado registrado:
 
 - testes executados: 3;
-- aprovados: 2;
-- reprovados: 1;
-- erros: 0;
-- ignorados: 0;
-- resultado do Maven: `BUILD FAILURE`, exclusivamente pela falha funcional
-  esperada.
+- testes aprovados: 2;
+- testes que falharam: 1;
+- erros de execução: 0.
 
-Os dois testes de sucesso também foram executados isoladamente:
+O resultado geral do Maven é `BUILD FAILURE` porque existe um teste que falha propositalmente para demonstrar o defeito. Quando apenas os dois testes de sucesso são executados, o resultado é `BUILD SUCCESS`.
 
-```bash
-sh ./mvnw \
-  -Dtest='UserServiceTest,AuthControllerTest#deveRetornarNaoAutorizadoQuandoSenhaEstiverIncorreta' \
-  test
+---
+
+## 8. Testes automatizados do frontend
+
+Foram implementados seis conjuntos de testes, distribuídos conforme as categorias exigidas. Como alguns arquivos possuem mais de um caso, a execução completa totaliza onze testes.
+
+| ID | Categoria | Arquivo | Cenário principal | Resultado |
+|---|---|---|---|---|
+| FRONT-TEST-01 | Função pura | `email.test.ts` | Validar formatos de e-mail válidos e inválidos | Aprovado |
+| FRONT-TEST-02 | Função pura | `localStorage.test.ts` | Salvar e recuperar o mesmo usuário | Falhou conforme esperado |
+| FRONT-TEST-03 | Componente | `Button.test.tsx` | Estado de carregamento e bloqueio do callback | Aprovado |
+| FRONT-TEST-04 | Componente | `PostCard.test.tsx` | Alertar usuário deslogado ao tentar curtir | Aprovado |
+| FRONT-TEST-05 | Integração | `signin.integration.test.tsx` | Autenticar e redirecionar após login válido | Aprovado |
+| FRONT-TEST-06 | Integração | `signup.integration.test.tsx` | Cadastrar, autenticar e redirecionar | Aprovado |
+
+### 8.1 Testes de funções puras
+
+Os testes de funções puras avaliam regras que não dependem da renderização de componentes.
+
+Foram testadas:
+
+- validação de e-mail;
+- persistência do usuário no `localStorage`.
+
+O teste de `localStorage` realiza um ciclo completo:
+
+1. salva um objeto de usuário;
+2. tenta recuperar esse objeto;
+3. compara o valor recuperado com o valor original.
+
+O resultado atual é `null`, pois a função de leitura utiliza uma chave diferente da função de gravação.
+
+### 8.2 Testes de componentes
+
+Os componentes foram renderizados isoladamente com React Testing Library.
+
+O teste do `Button` verifica se:
+
+- o texto muda para `Carregando...`;
+- o botão fica desabilitado;
+- o callback não é executado durante o carregamento.
+
+O teste do `PostCard` verifica se um usuário deslogado recebe o alerta previsto no requisito e se nenhuma chamada de curtida é realizada.
+
+### 8.3 Testes de integração
+
+Os testes de integração simulam a interação do usuário com páginas completas. As dependências externas, como serviços HTTP, `useAuth` e `next/navigation`, foram substituídas por mocks controlados.
+
+Foram validados os fluxos de:
+
+- login com credenciais válidas;
+- cadastro com dados válidos;
+- atualização do estado de autenticação;
+- redirecionamento para a página principal;
+- encerramento do estado de carregamento.
+
+### 8.4 Bug comprovado no frontend
+
+O teste de persistência espera recuperar o mesmo usuário que foi salvo:
+
+```typescript
+expect(storedUser).toEqual(user);
 ```
 
-Resultado isolado: 2 testes executados, 2 aprovados, 0 falhas, 0 erros e
-`BUILD SUCCESS`.
-
-Teste reprovado:
+Resultado obtido:
 
 ```text
-AuthControllerTest.deveRetornarConflitoQuandoEmailJaEstiverCadastrado
+Expected: {"email": "usuario@example.com", "id": 42}
+Received: null
 ```
 
-Assertion:
+A causa está no uso de chaves diferentes:
 
-```text
-[mensagem retornada para tentativa de cadastro com e-mail duplicado]
-expected: "E-mail já cadastrado"
- but was: "E-mail já está em uso"
-```
+- gravação: `user`;
+- leitura e remoção: `sqa_social_user`.
 
-A falha ocorre em `AuthControllerTest.java:103` e comprova o
-`BUG-BACK-001`. A implementação funcional não foi alterada.
+Esse defeito faz com que a autenticação seja perdida após o recarregamento da página e também impede a remoção correta do dado durante o logout.
 
-Durante a implementação, uma versão inicial com `@WebMvcTest` acionou o listener
-de reset do Mockito. No JDK 23 disponível, o Byte Buddy não conseguiu anexar o
-agente à JVM de forma consistente. Essa falha de infraestrutura foi eliminada
-usando MockMvc com `standaloneSetup` e um fake explícito de `UserService`; o
-resultado final não depende de instrumentação dinâmica.
+### 8.5 Resultado da execução
 
-## Testes de frontend implementados
-
-| ID | Categoria | Arquivo | Requisito | Deve passar? | Resultado |
-|---|---|---|---|---|---|
-| FRONT-TEST-001 | Função pura | `client/src/utils/__tests__/email.test.ts` | Validar e-mail válido, vazio, sem domínio, com espaço e em formato inválido | Sim | Aprovado: 6 casos |
-| FRONT-TEST-002 | Função pura | `client/src/lib/__tests__/localStorage.test.ts` | O usuário salvo deve ser recuperado pela mesma chave | Não, enquanto o bug existir | Reprovado pelo `BUG-FRONT-001` |
-| FRONT-TEST-003 | Componente | `client/src/components/__tests__/Button.test.tsx` | Loading deve mostrar `Carregando...`, desabilitar o botão e bloquear o callback | Sim | Aprovado |
-| FRONT-TEST-004 | Componente | `client/src/components/__tests__/PostCard.test.tsx` | Usuário deslogado deve receber alerta e não executar a curtida | Sim | Aprovado |
-| FRONT-TEST-005 | Integração | `client/src/app/__tests__/signin.integration.test.tsx` | Login válido deve autenticar, redirecionar e encerrar o loading | Sim | Aprovado |
-| FRONT-TEST-006 | Integração | `client/src/app/__tests__/signup.integration.test.tsx` | Cadastro válido deve autenticar e redirecionar sem erro | Sim | Aprovado |
-
-### Estratégia do frontend
-
-- Jest 30 e ambiente `jsdom`;
-- React Testing Library e `@testing-library/user-event`;
-- `@testing-library/jest-dom` carregado por `client/jest.setup.ts`;
-- alias `@/` mapeado explicitamente no Jest;
-- serviços de autenticação, `useAuth` e `next/navigation` mockados somente nas
-  fronteiras externas;
-- `window.alert` mockado e restaurado no teste de `PostCard`;
-- nenhum teste realiza chamadas ao backend ou à DummyJSON;
-- mocks e `localStorage` são limpos antes de cada teste.
-
-### Resultado da execução do frontend
-
-Comandos executados em `client`:
+Comando utilizado:
 
 ```bash
+cd client
 npm test -- --runInBand
-npm run test:coverage -- --runInBand
-npm run lint
-npm run build
 ```
 
-Resultado da suíte completa:
+Resultado registrado:
 
 - suítes executadas: 6;
 - suítes aprovadas: 5;
-- suítes reprovadas: 1;
+- suítes com falha: 1;
 - testes executados: 11;
 - testes aprovados: 10;
-- testes reprovados: 1;
-- snapshots: 0.
+- testes que falharam: 1.
 
-Os testes que devem passar também foram executados sem o cenário de bug:
+Ao desconsiderar o teste criado especificamente para evidenciar o bug, os dez casos restantes são aprovados.
 
-```bash
-npm test -- --runInBand \
-  --testPathIgnorePatterns=src/lib/__tests__/localStorage.test.ts
-```
-
-Resultado isolado: 5 suítes e 10 testes aprovados.
-
-Cobertura da execução completa:
+### 8.6 Cobertura registrada
 
 | Métrica | Cobertura |
 |---|---:|
@@ -1039,39 +377,80 @@ Cobertura da execução completa:
 | Functions | 65,85% |
 | Lines | 83,16% |
 
-O lint terminou com 0 erros e 0 avisos. O build Next.js 15.5.5 compilou,
-validou os tipos e gerou as 6 rotas estáticas com sucesso.
+A cobertura indica que uma parcela significativa das instruções e linhas envolvidas nos cenários escolhidos foi exercitada. Entretanto, a cobertura de branches é menor, demonstrando que ainda existem decisões condicionais e tratamentos de erro que poderiam receber novos testes.
 
-### Bug comprovado no frontend
+---
 
-Teste:
+## 9. Justificativas técnicas
 
-```text
-persistência do usuário > deve recuperar o mesmo usuário que foi salvo
-```
+### 9.1 Uso de testes unitários
 
-Assertion:
+Testes unitários foram utilizados para regras simples e isoladas, como validação de e-mail, validação de senha e acesso ao `localStorage`. Esse tipo de teste apresenta baixo custo de execução e facilita a identificação da causa de uma falha.
 
-```typescript
-expect(storedUser).toEqual(user);
-```
+### 9.2 Uso de testes de componentes
 
-Resultado:
+Os testes de componentes verificam o comportamento visual e interativo de elementos React sem executar toda a aplicação. Eles são adequados para validar estados de carregamento, bloqueio de botões, alertas e chamadas de callbacks.
 
-```text
-Expected: {"email": "usuario@example.com", "id": 42}
-Received: null
-```
+### 9.3 Uso de testes de integração
 
-A falha comprova o `BUG-FRONT-001`: `saveUser` grava na chave `user`, enquanto
-`getUser` lê `sqa_social_user`. O requisito violado é a persistência da
-autenticação após login ou cadastro. A implementação funcional não foi
-alterada.
+Os testes de integração foram utilizados nos fluxos de cadastro e login porque esses cenários envolvem a interação entre formulário, validação, serviço de autenticação, contexto do usuário e roteamento.
 
-### Limitação de acessibilidade encontrada
+### 9.4 Isolamento de dependências externas
 
-O componente `Input` renderiza o texto de `label`, mas não associa o elemento ao
-campo com `htmlFor`/`id`. Por isso, `getByLabelText` não consegue localizar os
-campos dos formulários. Os testes de integração usam `getByPlaceholderText`,
-conforme permitido quando a aplicação não oferece associação acessível. O
-componente não foi alterado nesta atividade.
+As chamadas de rede e funções de navegação foram simuladas por mocks. O isolamento evita que os testes dependam da disponibilidade da API, do banco de dados ou da DummyJSON, tornando os resultados mais rápidos e determinísticos.
+
+### 9.5 Manutenção de testes que falham
+
+Nesta atividade, a falha de determinados testes não representa erro na implementação da suíte. Ela é utilizada como evidência objetiva de que o sistema atual diverge dos requisitos.
+
+Após a correção dos defeitos, esses mesmos testes devem passar e podem ser mantidos como testes de regressão.
+
+---
+
+## 10. Limitações da análise
+
+- os testes implementados não cobrem todos os defeitos identificados;
+- a integração real com a DummyJSON não foi exercitada nos testes automatizados;
+- não foram implementados testes de concorrência para duplicidade de e-mail;
+- não foram implementados testes específicos de segurança;
+- os testes de acessibilidade foram limitados pela ausência de associação adequada entre labels e inputs;
+- a proteção de rotas ocorre apenas no cliente, portanto não representa autenticação real no servidor.
+
+Essas limitações não impedem o atendimento da atividade, mas indicam oportunidades para expansão futura da suíte.
+
+---
+
+## 11. Recomendações
+
+As correções devem ser priorizadas na seguinte ordem:
+
+1. remover a senha das respostas da API e armazená-la com hash seguro;
+2. implementar autenticação e autorização no backend;
+3. corrigir as chaves utilizadas no `localStorage`;
+4. padronizar as validações de senha entre frontend e backend;
+5. adequar as mensagens ao contrato definido nos requisitos;
+6. validar a existência de usuários e publicações antes de registrar curtidas;
+7. adicionar restrição única para e-mail no banco de dados;
+8. melhorar o tratamento de erros e o rollback das curtidas;
+9. corrigir a associação entre labels e campos dos formulários;
+10. ampliar a cobertura de branches e cenários de falha.
+
+---
+
+## 12. Conclusão
+
+A análise demonstrou que o SQA Social Media possui funcionalidades que operam corretamente em cenários básicos, como login válido, cadastro válido, exibição do feed e alerta de curtida para usuários deslogados. Entretanto, também foram identificadas divergências relevantes entre a implementação e os requisitos.
+
+Os testes automatizados desenvolvidos atenderam à distribuição solicitada para backend e frontend. Dois testes foram mantidos com falha intencional: um para comprovar a mensagem incorreta no cadastro duplicado e outro para comprovar a falha de persistência da autenticação.
+
+A atividade evidencia que testes de software não servem apenas para confirmar comportamentos corretos. Eles também funcionam como documentação executável dos requisitos e como evidência reproduzível de defeitos. Após as correções, os testes que atualmente falham poderão ser utilizados como proteção contra regressões.
+
+---
+
+## Referências
+
+- Documentação oficial do JUnit 5.
+- Documentação oficial do Spring Boot Test e MockMvc.
+- Documentação oficial do Jest.
+- Documentação oficial da React Testing Library.
+- Requisitos funcionais fornecidos na Atividade 4 — Prática de Testes 1.
