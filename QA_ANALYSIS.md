@@ -976,3 +976,102 @@ de reset do Mockito. No JDK 23 disponível, o Byte Buddy não conseguiu anexar o
 agente à JVM de forma consistente. Essa falha de infraestrutura foi eliminada
 usando MockMvc com `standaloneSetup` e um fake explícito de `UserService`; o
 resultado final não depende de instrumentação dinâmica.
+
+## Testes de frontend implementados
+
+| ID | Categoria | Arquivo | Requisito | Deve passar? | Resultado |
+|---|---|---|---|---|---|
+| FRONT-TEST-001 | Função pura | `client/src/utils/__tests__/email.test.ts` | Validar e-mail válido, vazio, sem domínio, com espaço e em formato inválido | Sim | Aprovado: 6 casos |
+| FRONT-TEST-002 | Função pura | `client/src/lib/__tests__/localStorage.test.ts` | O usuário salvo deve ser recuperado pela mesma chave | Não, enquanto o bug existir | Reprovado pelo `BUG-FRONT-001` |
+| FRONT-TEST-003 | Componente | `client/src/components/__tests__/Button.test.tsx` | Loading deve mostrar `Carregando...`, desabilitar o botão e bloquear o callback | Sim | Aprovado |
+| FRONT-TEST-004 | Componente | `client/src/components/__tests__/PostCard.test.tsx` | Usuário deslogado deve receber alerta e não executar a curtida | Sim | Aprovado |
+| FRONT-TEST-005 | Integração | `client/src/app/__tests__/signin.integration.test.tsx` | Login válido deve autenticar, redirecionar e encerrar o loading | Sim | Aprovado |
+| FRONT-TEST-006 | Integração | `client/src/app/__tests__/signup.integration.test.tsx` | Cadastro válido deve autenticar e redirecionar sem erro | Sim | Aprovado |
+
+### Estratégia do frontend
+
+- Jest 30 e ambiente `jsdom`;
+- React Testing Library e `@testing-library/user-event`;
+- `@testing-library/jest-dom` carregado por `client/jest.setup.ts`;
+- alias `@/` mapeado explicitamente no Jest;
+- serviços de autenticação, `useAuth` e `next/navigation` mockados somente nas
+  fronteiras externas;
+- `window.alert` mockado e restaurado no teste de `PostCard`;
+- nenhum teste realiza chamadas ao backend ou à DummyJSON;
+- mocks e `localStorage` são limpos antes de cada teste.
+
+### Resultado da execução do frontend
+
+Comandos executados em `client`:
+
+```bash
+npm test -- --runInBand
+npm run test:coverage -- --runInBand
+npm run lint
+npm run build
+```
+
+Resultado da suíte completa:
+
+- suítes executadas: 6;
+- suítes aprovadas: 5;
+- suítes reprovadas: 1;
+- testes executados: 11;
+- testes aprovados: 10;
+- testes reprovados: 1;
+- snapshots: 0.
+
+Os testes que devem passar também foram executados sem o cenário de bug:
+
+```bash
+npm test -- --runInBand \
+  --testPathIgnorePatterns=src/lib/__tests__/localStorage.test.ts
+```
+
+Resultado isolado: 5 suítes e 10 testes aprovados.
+
+Cobertura da execução completa:
+
+| Métrica | Cobertura |
+|---|---:|
+| Statements | 83,16% |
+| Branches | 50,70% |
+| Functions | 65,85% |
+| Lines | 83,16% |
+
+O lint terminou com 0 erros e 0 avisos. O build Next.js 15.5.5 compilou,
+validou os tipos e gerou as 6 rotas estáticas com sucesso.
+
+### Bug comprovado no frontend
+
+Teste:
+
+```text
+persistência do usuário > deve recuperar o mesmo usuário que foi salvo
+```
+
+Assertion:
+
+```typescript
+expect(storedUser).toEqual(user);
+```
+
+Resultado:
+
+```text
+Expected: {"email": "usuario@example.com", "id": 42}
+Received: null
+```
+
+A falha comprova o `BUG-FRONT-001`: `saveUser` grava na chave `user`, enquanto
+`getUser` lê `sqa_social_user`. O requisito violado é a persistência da
+autenticação após login ou cadastro. A implementação funcional não foi
+alterada.
+
+### Limitação de acessibilidade encontrada
+
+O componente `Input` renderiza o texto de `label`, mas não associa o elemento ao
+campo com `htmlFor`/`id`. Por isso, `getByLabelText` não consegue localizar os
+campos dos formulários. Os testes de integração usam `getByPlaceholderText`,
+conforme permitido quando a aplicação não oferece associação acessível. O
+componente não foi alterado nesta atividade.

@@ -194,3 +194,213 @@ expected: "E-mail já cadastrado"
         .deveRetornarConflitoQuandoEmailJaEstiverCadastrado(
             AuthControllerTest.java:103)
 ```
+
+# Relatório de Testes de Frontend — Atividade 4
+
+## 1. Estratégia de testes
+
+Foram criadas seis suítes para o frontend Next.js:
+
+- duas suítes de funções puras;
+- duas suítes de componentes;
+- duas suítes de integração de páginas;
+- um teste de regressão que falha exclusivamente por um bug funcional real.
+
+Os testes observam comportamento público, são independentes, limpam mocks e
+`localStorage`, não usam snapshots e não acessam internet, backend ou
+DummyJSON.
+
+## 2. Ferramentas utilizadas
+
+- Jest 30;
+- ambiente `jest-environment-jsdom`;
+- React Testing Library;
+- `@testing-library/jest-dom`;
+- `@testing-library/user-event`;
+- Next Jest;
+- TypeScript.
+
+Foi criado `client/jest.setup.ts`, configurado em `setupFilesAfterEnv`. O alias
+`@/` foi mapeado para `client/src/` no Jest. A pasta gerada `coverage/` foi
+adicionada aos ignores do ESLint.
+
+## 3. Testes de funções puras
+
+### Validação de e-mail
+
+Arquivo:
+
+```text
+client/src/utils/__tests__/email.test.ts
+```
+
+Foram cobertos e-mail válido, e-mail sem domínio, valor vazio, endereço com
+espaço e formato sem `@`. Também foram verificadas as mensagens para e-mail
+obrigatório e inválido. Os seis casos foram aprovados.
+
+### Persistência do usuário
+
+Arquivo:
+
+```text
+client/src/lib/__tests__/localStorage.test.ts
+```
+
+O teste cria um usuário, chama `saveUser`, chama `getUser` e compara o resultado
+com o objeto original. A comparação falha e comprova o `BUG-FRONT-001`.
+
+## 4. Testes de componentes
+
+### Button em carregamento
+
+Arquivo:
+
+```text
+client/src/components/__tests__/Button.test.tsx
+```
+
+Valida o texto `Carregando...`, o estado desabilitado e a ausência de chamada ao
+callback após tentativa de clique.
+
+### PostCard deslogado
+
+Arquivo:
+
+```text
+client/src/components/__tests__/PostCard.test.tsx
+```
+
+Valida título, corpo, botão `Curtir`, alerta exato para usuário não autenticado
+e ausência de chamada ao callback de curtida. `window.alert` é mockado e
+restaurado ao fim do teste.
+
+## 5. Testes de integração
+
+### Fluxo de login
+
+Arquivo:
+
+```text
+client/src/app/__tests__/signin.integration.test.tsx
+```
+
+O teste preenche e-mail e senha, envia o formulário e valida:
+
+- chamada de `authService.signIn`;
+- estado `Carregando...` durante a Promise;
+- chamada de `login` com o usuário retornado;
+- navegação para `/`;
+- botão novamente habilitado após o `finally`.
+
+### Fluxo de cadastro
+
+Arquivo:
+
+```text
+client/src/app/__tests__/signup.integration.test.tsx
+```
+
+Usa a senha `Senha1@forte`, aceita pela implementação atual. Valida chamada de
+`authService.signUp`, autenticação, navegação para `/`, ausência de erro e fim
+do estado de carregamento.
+
+## 6. Mocks utilizados
+
+- `authService.signIn`;
+- `authService.signUp`;
+- `useAuth`;
+- `useRouter` de `next/navigation`;
+- `window.alert`.
+
+Nenhum componente funcional foi alterado para facilitar os testes.
+
+## 7. Requisitos cobertos
+
+| ID | Categoria | Requisito | Resultado |
+|---|---|---|---|
+| FRONT-TEST-001 | Função pura | Validação de formatos de e-mail | Aprovado |
+| FRONT-TEST-002 | Função pura | Round-trip do usuário no `localStorage` | Reprovado por bug |
+| FRONT-TEST-003 | Componente | Button em loading | Aprovado |
+| FRONT-TEST-004 | Componente | PostCard para usuário deslogado | Aprovado |
+| FRONT-TEST-005 | Integração | Login válido | Aprovado |
+| FRONT-TEST-006 | Integração | Cadastro válido | Aprovado |
+
+## 8. Bug comprovado
+
+Requisito:
+
+```text
+O usuário salvo deve ser recuperado e a autenticação deve persistir.
+```
+
+Comportamento atual:
+
+```text
+saveUser -> chave "user"
+getUser  -> chave "sqa_social_user"
+```
+
+Assertion responsável:
+
+```typescript
+expect(storedUser).toEqual(user);
+```
+
+Falha:
+
+```text
+Expected: {"email": "usuario@example.com", "id": 42}
+Received: null
+```
+
+Essa é a única reprovação da suíte final. A chave não foi corrigida.
+
+## 9. Resultado da cobertura
+
+Execução completa:
+
+```text
+Test Suites: 1 failed, 5 passed, 6 total
+Tests:       1 failed, 10 passed, 11 total
+Snapshots:   0 total
+```
+
+| Métrica | Cobertura |
+|---|---:|
+| Statements | 83,16% |
+| Branches | 50,70% |
+| Functions | 65,85% |
+| Lines | 83,16% |
+
+Os dez testes de sucesso foram executados isoladamente e todos passaram.
+
+## 10. Comandos de execução
+
+```bash
+cd client
+npm test -- --runInBand
+npm run test:coverage -- --runInBand
+npm run lint
+npm run build
+```
+
+Resultados:
+
+- testes: 10 aprovados e 1 reprovado por bug funcional;
+- cobertura: gerada com sucesso;
+- TypeScript: 0 erros;
+- lint: 0 erros e 0 avisos;
+- build: concluído com sucesso.
+
+## 11. Limitações encontradas
+
+- `Input` apresenta `label`, mas não usa `htmlFor`/`id`; os campos não podem ser
+  consultados por `getByLabelText`. Os testes usam placeholders sem alterar o
+  componente.
+- A cobertura de branches ficou em 50,70%, pois os cenários de erro adicionais
+  das páginas não fazem parte do mínimo solicitado.
+- `npm install` reportou 13 vulnerabilidades nas dependências resolvidas: 1
+  baixa, 6 moderadas, 5 altas e 1 crítica. Nenhuma atualização forçada foi
+  aplicada para não ampliar o escopo.
+- O comando completo termina com status diferente de zero pela falha funcional
+  planejada, não por configuração, mock, alias, TypeScript ou ambiente Jest.
