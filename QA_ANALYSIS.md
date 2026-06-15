@@ -890,3 +890,89 @@ Alternativas fortes:
 - alert exato ao tentar curtir sem autenticação;
 - feedback visual otimista em uma requisição de curtida bem-sucedida;
 - redirecionamento client-side de `/auth/liked` quando o Context está vazio.
+
+## Testes de backend implementados
+
+| ID | Classe | Tipo | Requisito | Deve passar? | Resultado |
+|---|---|---|---|---|---|
+| BACK-TEST-001 | `UserServiceTest` | Unitário | Senha forte com exatamente 8 caracteres deve ser aceita | Sim | Aprovado |
+| BACK-TEST-002 | `AuthControllerTest` | Controller isolado com MockMvc | Login com senha incorreta, mas complexa, deve retornar HTTP 401 e `Credenciais inválidas` | Sim | Aprovado |
+| BACK-TEST-003 | `AuthControllerTest` | Controller isolado com MockMvc | E-mail duplicado deve retornar HTTP 409 e `E-mail já cadastrado` | Não, enquanto o bug existir | Reprovado pelo bug `BUG-BACK-001` |
+
+### Estratégia
+
+- JUnit 5 foi usado no teste unitário de `UserService`.
+- MockMvc em modo `standaloneSetup` e um fake controlado de `UserService` foram
+  usados para isolar o contrato do `AuthController`.
+- Nenhum teste utiliza MySQL, dados preexistentes ou chamadas externas.
+- O H2 de teste permanece configurado para futuras suítes de persistência, mas
+  não é necessário nos três cenários atuais.
+- O teste de duplicidade confirma primeiro HTTP 409, conteúdo JSON, campo
+  `status` e ausência de chamada a `createUser`. A única assertion que reprova é
+  a comparação da mensagem exigida pelo requisito.
+
+### Resultado da execução
+
+Comando solicitado no diretório original:
+
+```bash
+cd api
+sh ./mvnw clean test
+```
+
+Esse comando encontrou uma falha de infraestrutura porque o caminho absoluto do
+workspace contém `Codes:Local Projects`. Em sistemas Unix, `:` é o separador do
+classpath Java; por isso, o Maven fragmentou o caminho de `target/classes` e o
+compilador de testes não encontrou as classes principais já compiladas.
+
+Para eliminar essa interferência ambiental, o diretório `api` foi copiado sem
+alterações para um caminho temporário sem `:` e o mesmo comando foi executado:
+
+```bash
+cd /private/tmp/sqa-social-media-api-final.<sufixo>/api
+sh ./mvnw clean test
+```
+
+Resultado:
+
+- testes executados: 3;
+- aprovados: 2;
+- reprovados: 1;
+- erros: 0;
+- ignorados: 0;
+- resultado do Maven: `BUILD FAILURE`, exclusivamente pela falha funcional
+  esperada.
+
+Os dois testes de sucesso também foram executados isoladamente:
+
+```bash
+sh ./mvnw \
+  -Dtest='UserServiceTest,AuthControllerTest#deveRetornarNaoAutorizadoQuandoSenhaEstiverIncorreta' \
+  test
+```
+
+Resultado isolado: 2 testes executados, 2 aprovados, 0 falhas, 0 erros e
+`BUILD SUCCESS`.
+
+Teste reprovado:
+
+```text
+AuthControllerTest.deveRetornarConflitoQuandoEmailJaEstiverCadastrado
+```
+
+Assertion:
+
+```text
+[mensagem retornada para tentativa de cadastro com e-mail duplicado]
+expected: "E-mail já cadastrado"
+ but was: "E-mail já está em uso"
+```
+
+A falha ocorre em `AuthControllerTest.java:103` e comprova o
+`BUG-BACK-001`. A implementação funcional não foi alterada.
+
+Durante a implementação, uma versão inicial com `@WebMvcTest` acionou o listener
+de reset do Mockito. No JDK 23 disponível, o Byte Buddy não conseguiu anexar o
+agente à JVM de forma consistente. Essa falha de infraestrutura foi eliminada
+usando MockMvc com `standaloneSetup` e um fake explícito de `UserService`; o
+resultado final não depende de instrumentação dinâmica.
