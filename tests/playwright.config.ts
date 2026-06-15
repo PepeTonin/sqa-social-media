@@ -1,7 +1,5 @@
-import "dotenv/config";
 import { defineConfig, devices } from "@playwright/test";
-
-export const API_URL = process.env.API_URL ?? "http://localhost:8080";
+import { FRONTEND_URL } from "./helpers/environment";
 
 export default defineConfig({
   testDir: "./specs",
@@ -17,7 +15,7 @@ export default defineConfig({
     ["html", { outputFolder: "playwright-report", open: "never" }],
   ],
   use: {
-    baseURL: process.env.FRONTEND_URL ?? "http://localhost:3000",
+    baseURL: FRONTEND_URL,
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     trace: "retain-on-failure",
