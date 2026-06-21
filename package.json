@@ -1,0 +1,27 @@
+{
+  "name": "sqa-social-media-marcelo",
+  "version": "1.0.0",
+  "description": "Projeto educacional com uma API Spring Boot e um frontend Next.js.",
+  "main": "index.js",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Marcelolinho/sqa-social-media-marcelo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Marcelolinho/sqa-social-media-marcelo/issues"
+  },
+  "homepage": "https://github.com/Marcelolinho/sqa-social-media-marcelo#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^26.0.0"
+  }
+}
