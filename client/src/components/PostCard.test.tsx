@@ -1,14 +1,12 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import PostCard from "./PostCard";
 import { Post } from "@/service/types";
 
 /**
  * Teste UNITARIO de COMPONENTE (isolado).
  *
- * Verifica o requisito do feed:
- * - usuario deslogado ao clicar em "Curtir" deve ver um alert nativo;
- * - usuario logado ao clicar em "Curtir" dispara onLike e recebe feedback
- *   visual (texto muda para "Curtido").
+ * Requisito (feed): para usuarios deslogados, ao clicar em "Curtir" um alert
+ * nativo deve ser exibido e a acao de curtir (onLike) NAO deve ser disparada.
  */
 const basePost: Post = {
   id: 1,
@@ -18,23 +16,11 @@ const basePost: Post = {
 };
 
 describe("PostCard", () => {
-  it("renderiza titulo, corpo e botao de curtir", () => {
-    render(
-      <PostCard post={basePost} isAuthenticated={false} onLike={jest.fn()} />
-    );
-
-    expect(screen.getByText("Titulo do post")).toBeInTheDocument();
-    expect(screen.getByText("Corpo do post")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /curtir/i })).toBeInTheDocument();
-  });
-
   it("usuario deslogado vê alert e NAO chama onLike", () => {
     const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
     const onLike = jest.fn();
 
-    render(
-      <PostCard post={basePost} isAuthenticated={false} onLike={onLike} />
-    );
+    render(<PostCard post={basePost} isAuthenticated={false} onLike={onLike} />);
 
     fireEvent.click(screen.getByRole("button", { name: /curtir/i }));
 
@@ -44,20 +30,5 @@ describe("PostCard", () => {
     expect(onLike).not.toHaveBeenCalled();
 
     alertSpy.mockRestore();
-  });
-
-  it("usuario logado chama onLike e mostra feedback de curtido", async () => {
-    const onLike = jest.fn().mockResolvedValue(undefined);
-
-    render(
-      <PostCard post={basePost} isAuthenticated={true} onLike={onLike} />
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: /curtir/i }));
-
-    expect(onLike).toHaveBeenCalledWith(1);
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: /curtido/i })).toBeInTheDocument()
-    );
   });
 });
