@@ -16,8 +16,6 @@ class UserServiceTest {
 
   private final UserService userService = new UserService(null);
 
-  // ---------- Testes de SUCESSO (devem passar) ----------
-
   @Test
   @DisplayName("Senha forte (8+ chars, maiuscula, minuscula, numero e especial) e valida")
   void isPasswordValid_senhaForte_retornaTrue() {
@@ -32,8 +30,6 @@ class UserServiceTest {
     assertFalse(userService.isPasswordValid("senhafraca"), "so minusculas");
     assertFalse(userService.isPasswordValid("Abc1!"), "menos de 8 caracteres");
   }
-
-  // ---------- Teste de BUG (deve FALHAR) ----------
 
   /**
    * BUG capturado: o requisito diz que o cadastro deve aceitar apenas um
