@@ -5,6 +5,8 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+
 jobs:
   unit-tests-api:
     name: API Unit Tests (Maven + H2)
@@ -20,6 +22,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+
+      - name: Give Maven Wrapper permission
+        working-directory: ./api
+        run: chmod +x ./mvnw
 
       - name: Run API unit tests
         working-directory: ./api
@@ -87,6 +93,10 @@ jobs:
             client/package-lock.json
             tests/package-lock.json
 
+      - name: Give Maven Wrapper permission
+        working-directory: ./api
+        run: chmod +x ./mvnw
+
       - name: Build API
         working-directory: ./api
         run: ./mvnw package -DskipTests
@@ -106,11 +116,13 @@ jobs:
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8080/api/posts > /dev/null 2>&1; then
               echo "API is up"
-              break
+              exit 0
             fi
             echo "Waiting for API... attempt $i"
             sleep 3
           done
+          echo "API failed to start"
+          exit 1
 
       - name: Install client dependencies
         working-directory: ./client
@@ -131,11 +143,13 @@ jobs:
           for i in $(seq 1 20); do
             if curl -sf http://localhost:3000 > /dev/null 2>&1; then
               echo "Client is up"
-              break
+              exit 0
             fi
             echo "Waiting for client... attempt $i"
             sleep 3
           done
+          echo "Client failed to start"
+          exit 1
 
       - name: Install Playwright test dependencies
         working-directory: ./tests
@@ -145,7 +159,7 @@ jobs:
         working-directory: ./tests
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright tests (Chromium only)
+      - name: Run Playwright tests
         working-directory: ./tests
         run: npx playwright test --project=chromium
         env:
