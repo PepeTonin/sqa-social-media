@@ -42,7 +42,7 @@ describe('Validação de Senha - Utilitários', () => {
         // BUG: O código verifica password.length <= 8, o que significa que 8 caracteres é INVÁLIDO
         // Mas a mensagem diz "mínimo de 8 caracteres"
         // Comportamento esperado: 8 caracteres deveria ser VÁLIDO
-        const result = isPasswordValid('ValidPas1!');
+        const result = isPasswordValid('ValidP1!');
         expect(result).toBe(false);
         console.warn('✓ BUG CONFIRMADO: Senha com 8 caracteres rejeitada quando deveria ser válida!');
       } catch (error) {

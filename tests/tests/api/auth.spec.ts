@@ -1,13 +1,25 @@
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:8080/api';
+const API = 'http://localhost:8080';
 
+const TEST_USER_EMAIL = 'test@example.com';
+const TEST_USER_PASSWORD = 'Password123!';
+
+test.beforeAll(async ({ request }) => {
+  // Ensure the test user exists before running signin/duplicate tests
+  await request.post(`${API}/auth/signup`, {
+    data: {
+      email: TEST_USER_EMAIL,
+      password: TEST_USER_PASSWORD,
+    },
+  });
+});
 
 test('API 1: POST /auth/signin com credenciais válidas', async ({ request }) => {
   const response = await request.post(`${API}/auth/signin`, {
     data: {
-      email: 'test@example.com',
-      password: 'password123',
+      email: TEST_USER_EMAIL,
+      password: TEST_USER_PASSWORD,
     },
   });
   
@@ -21,8 +33,8 @@ test('API 1: POST /auth/signin com credenciais válidas', async ({ request }) =>
 test('API 2: POST /auth/signin com senha inválida', async ({ request }) => {
   const response = await request.post(`${API}/auth/signin`, {
     data: {
-      email: 'test@example.com',
-      password: 'wrongpassword',
+      email: TEST_USER_EMAIL,
+      password: 'WrongPass1!',
     },
   });
   
@@ -48,8 +60,8 @@ test('API 3: POST /auth/signup com email novo', async ({ request }) => {
 test('API 4: POST /auth/signup com email duplicado', async ({ request }) => {
   const response = await request.post(`${API}/auth/signup`, {
     data: {
-      email: 'test@example.com',
-      password: 'Password123!',
+      email: TEST_USER_EMAIL,
+      password: TEST_USER_PASSWORD,
     },
   });
   
