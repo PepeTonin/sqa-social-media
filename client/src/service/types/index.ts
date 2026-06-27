@@ -23,6 +23,7 @@ export interface ResetPasswordRequest {
 }
 
 export interface Post {
+  reactions: any;
   id: number;
   title: string;
   body: string;

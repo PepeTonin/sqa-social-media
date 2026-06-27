@@ -77,14 +77,32 @@ export default function PostCard({
         {post.body}
       </p>
 
+      {/* Alterado para space-between para acomodar os contadores na esquerda e o botão na direita */}
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
           alignItems: "center",
           marginTop: "1rem",
+          borderTop: "1px solid var(--border)",
+          paddingTop: "1rem",
         }}
       >
+        {/* Nova seção que consome as reações da API DummyJSON em tempo real */}
+        <div
+          style={{
+            display: "flex",
+            gap: "1.25rem",
+            color: "var(--foreground)",
+            fontSize: "0.95rem",
+            fontWeight: "500",
+            opacity: 0.85,
+          }}
+        >
+          <span title="Curtidas">👍 {post.reactions?.likes ?? 0}</span>
+          <span title="Descurtidas">👎 {post.reactions?.dislikes ?? 0}</span>
+        </div>
+
         <button
           onClick={handleLike}
           disabled={isLoading}
