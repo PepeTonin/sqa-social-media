@@ -55,7 +55,7 @@ test.describe("API - Autenticação (caixa-preta)", () => {
     });
     expect(second.status()).toBe(409);
     const body = await second.json();
-    expect(body.message).toBe("E-mail já está em uso");
+    expect(body.message).toBe("E-mail já cadastrado");
     expect(body.status).toBe(409);
   });
 
