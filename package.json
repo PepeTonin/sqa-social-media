@@ -1,0 +1,11 @@
+{
+  "name": "sqa-social-media-workspace",
+  "private": true,
+  "scripts": {
+    "test:front": "npm --prefix client test -- --runInBand",
+    "test:front:watch": "npm --prefix client run test:watch",
+    "test:front:coverage": "npm --prefix client run test:coverage",
+    "test:api": "echo \"Use o wrapper Maven dentro de api/ para rodar os testes da API.\"",
+    "test": "npm run test:front"
+  }
+}
