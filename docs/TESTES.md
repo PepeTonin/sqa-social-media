@@ -1,78 +1,73 @@
-# Atividade 4 — Prática de Testes 1
+# Testes e CI — Atividade 6
 
-Testes automatizados criados para o projeto **SQA Social Media** (Spring Boot + Next.js),
-com duas finalidades: **capturar bugs intencionais** (testes que falham) e **validar
-requisitos corretos** (testes de regressão que passam).
+Este projeto contém testes automatizados para o backend Spring Boot e para o frontend Next.js.
 
-## Como rodar
+## Como rodar localmente
 
-**Backend (JUnit):**
+Backend:
+
 ```bash
 cd api
+chmod +x mvnw
 ./mvnw test
 ```
 
-**Frontend (Jest + Testing Library):**
+Frontend:
+
 ```bash
 cd client
 npm install
 npm test
 ```
 
-> Observação: foram adicionados `client/jest.setup.ts` (matchers do `@testing-library/jest-dom`)
-> e o `moduleNameMapper` do alias `@/` em `client/jest.config.ts` para o Jest resolver os imports.
+## Testes consolidados
 
----
+### Backend — `api/`
 
-## Backend — `api/` (4 testes: 3 passam, 1 falha)
+- `UserServiceTest`: valida regras de senha forte e e-mail válido.
+- `AuthControllerTest`: valida o contrato HTTP do endpoint `/auth/signin` para credenciais inválidas.
 
-Arquivos:
-- `src/test/java/com/demoapp/demo/service/UserServiceTest.java`
-- `src/test/java/com/demoapp/demo/controller/AuthControllerTest.java`
+Correção aplicada: `UserService.isEmailValid` passou a validar e-mail com regex, rejeitando valores como `joao@` e `@dominio.com`.
 
-| Teste | Tipo | Requisito | Resultado |
-|---|---|---|---|
-| `isPasswordValid_senhaForte_retornaTrue` | unidade | Senha forte é aceita | ✅ passa |
-| `isPasswordValid_senhaFraca_retornaFalse` | unidade | Senha fraca é rejeitada | ✅ passa |
-| `signin_senhaIncorreta_retorna401` | integração (MockMvc) | Credenciais erradas → 401 "Credenciais inválidas" | ✅ passa |
-| `isEmailValid_emailSemDominio_deveriaSerInvalido` | unidade | E-mail deve ser válido | ❌ **falha (bug)** |
+### Frontend — `client/`
 
-### 🐞 Bug capturado (backend)
-`UserService.isEmailValid` valida o e-mail apenas com `email.contains("@")`, aceitando
-endereços inválidos como `joao@` (sem domínio) ou `@dominio.com` (sem usuário). O requisito
-de cadastro exige **e-mail válido**. O teste afirma o comportamento correto e, por isso, falha.
+- `email.test.ts`: valida e-mails aceitos/rejeitados.
+- `password.test.ts`: valida senha forte com mínimo de 8 caracteres.
+- `PostCard.test.tsx`: valida renderização do post, likes/dislikes e comportamento do botão de curtir.
+- `Header.test.tsx`: valida o menu para usuários logados e deslogados.
+- `signin.test.tsx`: valida o fluxo de login.
+- `home.test.tsx`: valida a renderização do feed e das reações vindas da API.
 
-**Correção sugerida:** usar um regex de e-mail, ex.:
-`^[^\s@]+@[^\s@]+\.[^\s@]+$`.
+Correções aplicadas:
 
----
+- `isPasswordValid` agora aceita senhas fortes com exatamente 8 caracteres.
+- `saveUser` agora salva o usuário na mesma chave lida por `getUser`.
 
-## Frontend — `client/` (16 testes em 6 arquivos: 15 passam, 1 falha)
+## Nova feature
 
-### 2 testes unitários — funções puras
-- `src/utils/email.test.ts` — `isEmailValid` / `getEmailValidationMessage` ✅
-- `src/utils/password.test.ts` — `isPasswordValid` ❌ **(bug)**
+A Home agora exibe, em cada post, o número de curtidas e descurtidas vindo do objeto `reactions` da API DummyJSON:
 
-### 2 testes unitários — componentes isolados
-- `src/components/PostCard.test.tsx` — alert para deslogado, `onLike` + feedback para logado ✅
-- `src/components/Header.test.tsx` — botões corretos para logado/deslogado ✅
+```json
+{
+  "reactions": {
+    "likes": 10,
+    "dislikes": 2
+  }
+}
+```
 
-### 2 testes de integração — telas/fluxos
-- `src/app/signin/signin.test.tsx` — fluxo de login (erro 401 e sucesso → `/`) ✅
-- `src/app/home.test.tsx` — feed renderiza posts da API e alert ao curtir deslogado ✅
+O backend preserva essa estrutura no retorno de `/posts`, e o frontend renderiza os valores no componente `PostCard`.
 
-### 🐞 Bug capturado (frontend)
-`utils/password.ts` usa a condição `password.length <= 8`, rejeitando senhas de **exatamente
-8 caracteres**. O requisito é **mínimo de 8 caracteres**, logo `Senha@12` (8 chars, com
-maiúscula, minúscula, número e especial) deveria ser válida. O teste afirma o esperado e falha.
+## GitHub Actions
 
-**Correção sugerida:** trocar `<= 8` por `< 8` (em `isPasswordValid` e `getPasswordValidationMessage`).
+A esteira fica em `.github/workflows/ci.yml` e roda automaticamente em Pull Requests para a branch `main`.
 
----
+Ela executa:
 
-## Outros bugs observados (não cobertos por teste, candidatos extras)
-
-- **Mensagem de e-mail duplicado:** o backend retorna `"E-mail já está em uso"`, mas o
-  requisito pede `"E-mail já cadastrado"` (`AuthController.signup`).
-- **Chave do localStorage:** `lib/localStorage.ts` grava em `"user"` (`saveUser`) mas lê
-  de `"sqa_social_user"` (`getUser`/`USER_KEY`), perdendo a sessão ao recarregar a página.
+1. configuração de Java 17, Node.js 20 e MySQL;
+2. instalação das dependências do frontend;
+3. testes do backend com Maven;
+4. testes do frontend com Jest;
+5. build do frontend;
+6. subida local da API e do cliente;
+7. smoke tests para confirmar que ambos respondem.

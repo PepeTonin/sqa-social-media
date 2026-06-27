@@ -16,6 +16,8 @@ export default function PostCard({
 }: PostCardProps) {
   const [liked, setLiked] = useState(post.liked);
   const [isLoading, setIsLoading] = useState(false);
+  const likes = post.reactions?.likes ?? 0;
+  const dislikes = post.reactions?.dislikes ?? 0;
 
   async function handleLike() {
     if (!isAuthenticated) {
@@ -80,11 +82,27 @@ export default function PostCard({
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
           alignItems: "center",
+          gap: "1rem",
           marginTop: "1rem",
         }}
       >
+        <div
+          aria-label={`Reações: ${likes} curtidas e ${dislikes} descurtidas`}
+          style={{
+            display: "flex",
+            gap: "1rem",
+            color: "var(--foreground)",
+            opacity: 0.8,
+            fontSize: "0.875rem",
+            fontWeight: "500",
+          }}
+        >
+          <span>👍 {likes} likes</span>
+          <span>👎 {dislikes} dislikes</span>
+        </div>
+
         <button
           onClick={handleLike}
           disabled={isLoading}
