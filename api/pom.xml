@@ -70,19 +70,6 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			<!--
-			  Mockito usa o inline mock maker (Byte Buddy) para criar dubles.
-			  Em JDKs mais novos que o suportado oficialmente, e preciso ligar o
-			  modo experimental do Byte Buddy para que ele consiga instrumentar as
-			  classes. A flag e inofensiva em JDKs ja suportados.
-			-->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<argLine>-Dnet.bytebuddy.experimental=true</argLine>
-				</configuration>
-			</plugin>
 		</plugins>
 	</build>
 

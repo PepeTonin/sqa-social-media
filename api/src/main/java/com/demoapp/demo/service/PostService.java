@@ -23,11 +23,29 @@ public class PostService {
     this.objectMapper = new ObjectMapper();
   }
 
+  private Map<String, Integer> extractReactions(JsonNode postNode) {
+    Map<String, Integer> reactions = new HashMap<>();
+    JsonNode reactionsNode = postNode.get("reactions");
+
+    if (reactionsNode != null && reactionsNode.isObject()) {
+      reactions.put("likes", reactionsNode.path("likes").asInt(0));
+      reactions.put("dislikes", reactionsNode.path("dislikes").asInt(0));
+    } else if (reactionsNode != null && reactionsNode.isNumber()) {
+      reactions.put("likes", reactionsNode.asInt(0));
+      reactions.put("dislikes", 0);
+    } else {
+      reactions.put("likes", 0);
+      reactions.put("dislikes", 0);
+    }
+
+    return reactions;
+  }
+
   public Map<String, Object> getPosts(Integer limit, Integer skip, Long userId) {
     try {
       StringBuilder url = new StringBuilder("https://dummyjson.com/posts");
       List<String> params = new ArrayList<>();
-      
+
       if (limit != null) {
         params.add("limit=" + limit);
       }
@@ -52,16 +70,17 @@ public class PostService {
 
       List<Map<String, Object>> posts = new ArrayList<>();
       JsonNode postsArray = rootNode.get("posts");
-      
+
       for (JsonNode postNode : postsArray) {
         Map<String, Object> post = new HashMap<>();
         Long postId = postNode.get("id").asLong();
-        
+
         post.put("id", postId);
         post.put("title", postNode.get("title").asText());
         post.put("body", postNode.get("body").asText());
+        post.put("reactions", extractReactions(postNode));
         post.put("liked", likedPostIds.contains(postId));
-        
+
         posts.add(post);
       }
 
@@ -84,31 +103,32 @@ public class PostService {
       if (skip == null) skip = 0;
 
       List<UserPostReaction> allLikes = reactionRepository.findByUserId(userId);
-      
+
       List<Long> likedPostIds = allLikes.stream()
         .map(UserPostReaction::getPostId)
         .collect(Collectors.toList());
 
       int total = likedPostIds.size();
-      
+
       int fromIndex = Math.min(skip, total);
       int toIndex = Math.min(skip + limit, total);
-      
+
       List<Long> paginatedIds = likedPostIds.subList(fromIndex, toIndex);
 
       List<Map<String, Object>> posts = new ArrayList<>();
-      
+
       for (Long postId : paginatedIds) {
         String url = "https://dummyjson.com/posts/" + postId;
         String response = restTemplate.getForObject(url, String.class);
         JsonNode postNode = objectMapper.readTree(response);
-        
+
         Map<String, Object> post = new HashMap<>();
         post.put("id", postNode.get("id").asLong());
         post.put("title", postNode.get("title").asText());
         post.put("body", postNode.get("body").asText());
+        post.put("reactions", extractReactions(postNode));
         post.put("liked", true);
-        
+
         posts.add(post);
       }
 
@@ -127,7 +147,7 @@ public class PostService {
 
   public Map<String, Object> toggleLike(Long postId, Long userId) {
     Optional<UserPostReaction> existing = reactionRepository.findByUserIdAndPostId(userId, postId);
-    
+
     boolean liked;
     if (existing.isPresent()) {
       reactionRepository.delete(existing.get());
@@ -143,7 +163,7 @@ public class PostService {
     Map<String, Object> result = new HashMap<>();
     result.put("postId", postId);
     result.put("liked", liked);
-    
+
     return result;
   }
 
