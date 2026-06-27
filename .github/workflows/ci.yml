@@ -1,0 +1,48 @@
+name: CI - Testes Automatizados
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Permitir Maven Wrapper
+        run: chmod +x api/mvnw
+
+      - name: Instalar dependências do frontend
+        working-directory: client
+        run: npm ci
+
+      - name: Testar backend
+        working-directory: api
+        run: ./mvnw -B test
+
+      - name: Testar frontend
+        working-directory: client
+        run: npm test -- --runInBand
+
+      - name: Build frontend
+        working-directory: client
+        run: npm run build
