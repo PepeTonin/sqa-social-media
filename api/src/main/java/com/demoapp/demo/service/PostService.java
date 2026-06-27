@@ -61,6 +61,8 @@ public class PostService {
         post.put("title", postNode.get("title").asText());
         post.put("body", postNode.get("body").asText());
         post.put("liked", likedPostIds.contains(postId));
+        post.put("likes", getReactionCount(postNode, "likes"));
+        post.put("dislikes", getReactionCount(postNode, "dislikes"));
         
         posts.add(post);
       }
@@ -108,6 +110,8 @@ public class PostService {
         post.put("title", postNode.get("title").asText());
         post.put("body", postNode.get("body").asText());
         post.put("liked", true);
+        post.put("likes", getReactionCount(postNode, "likes"));
+        post.put("dislikes", getReactionCount(postNode, "dislikes"));
         
         posts.add(post);
       }
@@ -145,6 +149,15 @@ public class PostService {
     result.put("liked", liked);
     
     return result;
+  }
+
+  private int getReactionCount(JsonNode postNode, String fieldName) {
+    JsonNode reactionsNode = postNode.get("reactions");
+    if (reactionsNode == null || reactionsNode.get(fieldName) == null) {
+      return 0;
+    }
+
+    return reactionsNode.get(fieldName).asInt();
   }
 
 }

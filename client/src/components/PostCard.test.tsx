@@ -6,6 +6,8 @@ const post = {
   title: "Primeiro post",
   body: "Conteudo do primeiro post",
   liked: false,
+  likes: 12,
+  dislikes: 3,
 };
 
 describe("PostCard", () => {
@@ -22,6 +24,8 @@ describe("PostCard", () => {
 
     expect(screen.getByText("Primeiro post")).toBeInTheDocument();
     expect(screen.getByText("Conteudo do primeiro post")).toBeInTheDocument();
+    expect(screen.getByText("Likes: 12")).toBeInTheDocument();
+    expect(screen.getByText("Dislikes: 3")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Curtir/ })).toBeInTheDocument();
   });
 

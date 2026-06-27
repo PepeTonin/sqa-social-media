@@ -44,6 +44,8 @@ describe("Home page", () => {
           title: "Post vindo da API",
           body: "Texto carregado pelo feed",
           liked: false,
+          likes: 8,
+          dislikes: 1,
         },
       ],
       total: 1,
@@ -60,6 +62,8 @@ describe("Home page", () => {
     });
 
     expect(screen.getByText("Texto carregado pelo feed")).toBeInTheDocument();
+    expect(screen.getByText("Likes: 8")).toBeInTheDocument();
+    expect(screen.getByText("Dislikes: 1")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Curtir/ })).toBeInTheDocument();
   });
 });
