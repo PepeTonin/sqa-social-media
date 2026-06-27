@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Testes da API
+        working-directory: api
+        run: ./mvnw test
+
+      - name: Instalar dependencias do client
+        working-directory: client
+        run: npm ci
+
+      - name: Testes do client
+        working-directory: client
+        run: npm test -- --watch=false
+
+      - name: Instalar dependencias dos testes Playwright
+        working-directory: tests
+        run: npm ci
+
+      - name: Instalar navegador do Playwright
+        working-directory: tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Iniciar API
+        working-directory: api
+        run: |
+          SPRING_DATASOURCE_URL=jdbc:h2:mem:cidb \
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver \
+          SPRING_DATASOURCE_USERNAME=sa \
+          SPRING_DATASOURCE_PASSWORD= \
+          SPRING_JPA_HIBERNATE_DDL_AUTO=create-drop \
+          nohup ./mvnw spring-boot:run > api.log 2>&1 &
+
+      - name: Iniciar client
+        working-directory: client
+        run: nohup npm run dev > client.log 2>&1 &
+
+      - name: Aguardar aplicacao
+        run: |
+          sleep 40
+          curl --fail http://localhost:8080/posts?limit=1
+          curl --fail http://localhost:3000
+
+      - name: Testes Playwright
+        working-directory: tests
+        run: npm test

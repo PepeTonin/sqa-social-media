@@ -1,5 +1,8 @@
 export function isPasswordValid(password: string): boolean {
-  if (!password || password.length <= 8) {
+
+  // Rejeita apenas senhas com menos de 8 caracteres.
+
+  if (!password || password.length < 8) {
     return false;
   }
 
@@ -18,7 +21,7 @@ export function getPasswordValidationMessage(password: string): string {
 
   const errors: string[] = [];
 
-  if (password.length <= 8) {
+  if (password.length < 8) {
     errors.push("mínimo de 8 caracteres");
   }
 

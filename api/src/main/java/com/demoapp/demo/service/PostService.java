@@ -61,6 +61,7 @@ public class PostService {
         post.put("title", postNode.get("title").asText());
         post.put("body", postNode.get("body").asText());
         post.put("liked", likedPostIds.contains(postId));
+        post.put("reactions", objectMapper.convertValue(postNode.get("reactions"), Map.class));
         
         posts.add(post);
       }
@@ -108,6 +109,7 @@ public class PostService {
         post.put("title", postNode.get("title").asText());
         post.put("body", postNode.get("body").asText());
         post.put("liked", true);
+        post.put("reactions", objectMapper.convertValue(postNode.get("reactions"), Map.class));
         
         posts.add(post);
       }
