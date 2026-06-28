@@ -15,6 +15,13 @@ jobs:
     - uses: actions/setup-node@v5
       with:
         node-version: lts/*
+
+    - name: Build Spring Boot
+      run: cd api && mvn clean install
+
+    - name: Build Next
+      run: cd client && npm ci && npm run build
+
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
