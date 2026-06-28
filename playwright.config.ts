@@ -63,7 +63,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: [
     {
-      command: 'java -jar build/libs/api.jar',
+      command: 'java -jar target/demo-0.0.1-SNAPSHOT.jar',
       cwd: './api',
       url: 'http://localhost:8080',
       reuseExistingServer: !process.env.CI,
