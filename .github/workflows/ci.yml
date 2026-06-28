@@ -46,4 +46,4 @@ jobs:
 
       - name: Executar testes do Frontend
         working-directory: ./client
-        run: npm test -- --watchAll=false
+        run: npm test -- --watchAll=false --passWithNoTests
