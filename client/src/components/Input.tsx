@@ -10,6 +10,7 @@ export default function Input({ label, error, ...props }: InputProps) {
     <div style={{ marginBottom: "1rem" }}>
       {label && (
         <label
+          htmlFor={props.id}
           style={{
             display: "block",
             marginBottom: "0.5rem",

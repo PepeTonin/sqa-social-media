@@ -137,8 +137,11 @@ export default function SignUp() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form
+            aria-label="signup-form" 
+            onSubmit={handleSubmit}>
             <Input
+              id="email"
               label="Email"
               type="email"
               value={email}
@@ -148,6 +151,7 @@ export default function SignUp() {
             />
 
             <Input
+              id="senha"
               label="Senha"
               type="password"
               value={password}
@@ -157,6 +161,7 @@ export default function SignUp() {
             />
 
             <Input
+              id="confirmar-senha"
               label="Confirmar Senha"
               type="password"
               value={confirmPassword}

@@ -1,6 +1,12 @@
 package com.demoapp.demo.dto;
 
 public class UserDTO {
+  
+  public UserDTO(String email, String password) {
+    this.email = email;
+    this.password = password;
+  }
+
   private String email;
   private String password;
 
