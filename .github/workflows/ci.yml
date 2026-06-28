@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Testes de backend (JUnit)
+        working-directory: api
+        run: ./mvnw test
+
+      - name: Instalar dependências do frontend
+        working-directory: client
+        run: npm ci
+
+      - name: Testes de frontend (Jest)
+        working-directory: client
+        run: npm test
+
+      - name: Subir a API (porta 8080)
+        working-directory: api
+        run: nohup ./mvnw spring-boot:run > ../api.log 2>&1 &
+
+      - name: Subir o client (porta 3000)
+        working-directory: client
+        run: nohup npm run dev > ../client.log 2>&1 &
+
+      - name: Instalar dependências dos testes
+        working-directory: tests
+        run: npm ci
+
+      - name: Instalar navegadores do Playwright
+        working-directory: tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Aguardar API e client ficarem prontos
+        run: npx wait-on http-get://localhost:8080/posts?limit=1 http-get://localhost:3000 --timeout 120000
+
+      - name: Rodar testes E2E e de API (Playwright)
+        working-directory: tests
+        run: npx playwright test
