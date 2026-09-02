@@ -195,7 +195,13 @@ curl "http://localhost:8080/posts?userId=1&limit=10&skip=0"
 
 ## Testes
 
-Os testes da API usam H2 em memória por meio de `src/test/resources/application.properties`.
+A pasta `src/test/java` traz exemplos das três técnicas pedidas na atividade:
+
+- `UserServiceTests`: unitário simples, só JUnit (`new UserService(...)`).
+- `UserServiceMockitoTests`: unitário com Mockito (repositório simulado).
+- `AuthControllerTests`: API com MockMvc (`@WebMvcTest`).
+
+`DemoApplicationTests` sobe o contexto Spring e usa H2 em memória via `src/test/resources/application.properties`.
 
 ```bash
 ./mvnw test
@@ -205,6 +211,8 @@ Para rodar um teste específico:
 
 ```bash
 ./mvnw test -Dtest=UserServiceTests
+./mvnw test -Dtest=UserServiceMockitoTests
+./mvnw test -Dtest=AuthControllerTests
 ```
 
 ## Estrutura do Projeto
@@ -224,10 +232,15 @@ api/
 │   │   └── resources/
 │   │       └── application.properties      # Configurações da aplicação
 │   └── test/
-│       └── java/com/demoapp/demo/
-│           ├── service/                    # Testes dos Services
-│           │   └── UserServiceTests.java
-│           └── DemoApplicationTests.java   # Testes gerais
+│       ├── java/com/demoapp/demo/
+│       │   ├── controller/
+│       │   │   └── AuthControllerTests.java   # Exemplos MockMvc
+│       │   ├── service/
+│       │   │   ├── UserServiceTests.java      # Exemplos JUnit
+│       │   │   └── UserServiceMockitoTests.java
+│       │   └── DemoApplicationTests.java      # Sobe o contexto Spring
+│       └── resources/
+│           └── application.properties         # H2 em memória (testes)
 ├── pom.xml                                 # Dependências Maven
 └── README.md                               # Documentação
 ```
