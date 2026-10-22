@@ -1,5 +1,7 @@
 # SQA Social Media E2E
 
+test update
+
 Testes Playwright para validar fluxos de interface e endpoints da API.
 
 ## Visão Geral
